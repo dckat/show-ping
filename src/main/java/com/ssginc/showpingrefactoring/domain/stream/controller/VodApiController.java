@@ -1,5 +1,7 @@
 package com.ssginc.showpingrefactoring.domain.stream.controller;
 
+import com.ssginc.showpingrefactoring.common.dto.PageResponseDto;
+import com.ssginc.showpingrefactoring.common.dto.SliceResponseDto;
 import com.ssginc.showpingrefactoring.domain.stream.dto.request.VodListRequestDto;
 import com.ssginc.showpingrefactoring.domain.stream.dto.response.StreamResponseDto;
 import com.ssginc.showpingrefactoring.domain.stream.service.SubtitleService;
@@ -40,12 +42,13 @@ public class VodApiController implements VodApiSpecification {
     @GetMapping("/list")
     public ResponseEntity<?> listVod(@Valid @ModelAttribute VodListRequestDto vodListRequestDto) {
         Pageable pageable = PageRequest.of(vodListRequestDto.getPageNo(), 4);
+
         Page<StreamResponseDto> page = vodService.findVods(
                 vodListRequestDto.getCategoryNo(),
                 vodListRequestDto.getSort(),
                 pageable);
 
-        return ResponseEntity.ok(Map.of("pageInfo", page));
+        return ResponseEntity.ok(PageResponseDto.of(page));
     }
 
     /**
