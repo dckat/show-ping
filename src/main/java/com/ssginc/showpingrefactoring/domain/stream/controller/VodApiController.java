@@ -1,7 +1,6 @@
 package com.ssginc.showpingrefactoring.domain.stream.controller;
 
 import com.ssginc.showpingrefactoring.common.dto.PageResponseDto;
-import com.ssginc.showpingrefactoring.common.dto.SliceResponseDto;
 import com.ssginc.showpingrefactoring.domain.stream.dto.request.VodListRequestDto;
 import com.ssginc.showpingrefactoring.domain.stream.dto.response.StreamResponseDto;
 import com.ssginc.showpingrefactoring.domain.stream.service.SubtitleService;
