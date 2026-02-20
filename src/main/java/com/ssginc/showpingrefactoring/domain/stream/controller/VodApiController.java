@@ -1,6 +1,10 @@
 package com.ssginc.showpingrefactoring.domain.stream.controller;
 
+import com.ssginc.showpingrefactoring.common.dto.PageResponseDto;
+import com.ssginc.showpingrefactoring.common.dto.SliceResponseDto;
+import com.ssginc.showpingrefactoring.domain.stream.dto.object.VodListCursor;
 import com.ssginc.showpingrefactoring.domain.stream.dto.request.VodListRequestDto;
+import com.ssginc.showpingrefactoring.domain.stream.dto.request.VodListScrollRequestDto;
 import com.ssginc.showpingrefactoring.domain.stream.dto.response.StreamResponseDto;
 import com.ssginc.showpingrefactoring.domain.stream.service.SubtitleService;
 import com.ssginc.showpingrefactoring.domain.stream.service.VodService;
@@ -40,12 +44,32 @@ public class VodApiController implements VodApiSpecification {
     @GetMapping("/list")
     public ResponseEntity<?> listVod(@Valid @ModelAttribute VodListRequestDto vodListRequestDto) {
         Pageable pageable = PageRequest.of(vodListRequestDto.getPageNo(), 4);
+
         Page<StreamResponseDto> page = vodService.findVods(
                 vodListRequestDto.getCategoryNo(),
                 vodListRequestDto.getSort(),
                 pageable);
 
-        return ResponseEntity.ok(Map.of("pageInfo", page));
+        return ResponseEntity.ok(PageResponseDto.of(page));
+    }
+
+    @Override
+    @GetMapping("/list/scroll")
+    public ResponseEntity<?> listVodScroll(@Valid @ModelAttribute VodListScrollRequestDto vodListScrollRequestDto) {
+        Long cursorStreamNo = vodListScrollRequestDto.getCursorStreamNo();
+
+        VodListCursor cursor = (cursorStreamNo != null)
+                ? new VodListCursor(cursorStreamNo)
+                : null;
+
+        SliceResponseDto<StreamResponseDto, VodListCursor> slice =
+                vodService.findVodsScroll(
+                        vodListScrollRequestDto.getCategoryNo(),
+                        cursor,
+                        vodListScrollRequestDto.getPageSize());
+
+        return ResponseEntity.ok(slice);
+
     }
 
     /**

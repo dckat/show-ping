@@ -1,6 +1,7 @@
 package com.ssginc.showpingrefactoring.domain.stream.swagger;
 
 import com.ssginc.showpingrefactoring.domain.stream.dto.request.VodListRequestDto;
+import com.ssginc.showpingrefactoring.domain.stream.dto.request.VodListScrollRequestDto;
 import com.ssginc.showpingrefactoring.domain.stream.dto.response.StreamResponseDto;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -13,6 +14,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -41,6 +43,21 @@ public interface VodApiSpecification {
     )
     ResponseEntity<?> listVod(@ParameterObject @Valid VodListRequestDto vodListRequestDto);
 
+    @Operation(
+            summary = "VOD 목록 조회",
+            description = "등록된 모든 VOD 정보를 조회"
+    )
+    @ApiResponse(
+            responseCode = "200",
+            description = "조회 성공",
+            content = @Content(
+                    mediaType = "application/json",
+                    array = @ArraySchema(
+                            schema = @Schema(implementation = StreamResponseDto.class)
+                    )
+            )
+    )
+    public ResponseEntity<?> listVodScroll(@Valid @ModelAttribute VodListScrollRequestDto vodListScrollRequestDto);
 
     @Operation(
             summary     = "VOD 업로드",

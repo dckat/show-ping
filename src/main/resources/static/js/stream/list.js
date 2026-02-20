@@ -5,7 +5,7 @@ let categoryNumber = null;
 document.addEventListener("DOMContentLoaded", function () {
     setupFilterButtons();                      // 필터링 버튼 셋팅
     loadBroadCast(0);                  // ONAIR + STANDBY 불러오기
-    loadVod(0);                        // 최초 1페이지의 VOD 목록 불러오기
+    loadVod(null);                    // 최초 1페이지의 VOD 목록 불러오기
 
     document.getElementById('filter-all').selected = true;
 });
@@ -44,7 +44,7 @@ function setupVodFilterButtons() {
 
             allButton.addEventListener('click', function() {
                 vodFiltered = false;
-                loadVod(0);
+                loadVod(null);
             });
             filterButtons.appendChild(allButton);
 
@@ -60,7 +60,7 @@ function setupVodFilterButtons() {
                 button.addEventListener('click', function() {
                     vodFilterOption = 'filtered';
                     categoryNumber = parseInt(category.categoryNo);
-                    loadVodByCategory(0, categoryNumber);
+                    loadVodByCategory(null, categoryNumber);
                 });
 
                 filterButtons.appendChild(button);
@@ -287,19 +287,21 @@ function loadStandBy(pageNo) {
         })
 }
 
-function loadVod(pageNo) {
+function loadVod(streamNo) {
     // 현재 페이지의 VOD 목록 불러오기
-    axios.get('/api/vod/list', {
+    axios.get('/api/vod/list/scroll', {
         params: {
-            pageNo: pageNo,
-            categoryNo: 0
+            categoryNo: 0,
+            cursorStreamNo: streamNo,  // 첫 요청 시 null
+            pageSize: 4
         }
     }).then(response => {
-            const pageInfo = response.data['pageInfo'];
-            const vodContent = pageInfo['content'];
+            const data = response.data;
+            const vodContent = data['content'];
+
             const vodGrid = document.getElementById('vod-grid');
 
-            if (pageNo === 0) {
+            if (!streamNo) {
                 vodGrid.innerHTML = '';
             }
 
@@ -347,25 +349,27 @@ function loadVod(pageNo) {
                 vodGrid.appendChild(vodDiv);
             });
 
-            renderPageContent(pageInfo, 'vod-page-container');
+            renderPageContent(data, 'vod-page-container');
         })
         .catch(error => {
             console.error("VOD 목록을 불러오는 중 오류 발생:", error);
         });
 }
 
-function loadVodByCategory(pageNo, categoryNo) {
-    axios.get(`/api/vod/list`, {
+function loadVodByCategory(streamNo, categoryNo) {
+    axios.get(`/api/vod/list/scroll`, {
         params: {
-            pageNo: pageNo,
             categoryNo: categoryNo,
+            cursorStreamNo: streamNo,  // 첫 요청 시 null
+            pageSize: 4
         }
     }).then(response => {
-        const pageInfo = response.data['pageInfo'];
-        const vodContent = pageInfo['content'];
+        const data = response.data;
+        const vodContent = data['content'];
+
         const vodGrid = document.getElementById('vod-grid');
 
-        if (pageNo === 0) {
+        if (!streamNo) {
             vodGrid.innerHTML = '';
         }
 
@@ -412,21 +416,24 @@ function loadVodByCategory(pageNo, categoryNo) {
 
             vodGrid.appendChild(vodDiv);
         });
-        renderPageContent(pageInfo, 'vod-page-container');
+        renderPageContent(data, 'vod-page-container');
     })
         .catch(error => {
             console.error("VOD 목록을 불러오는 중 오류 발생:", error);
         });
 }
 
-function renderPageContent(pageInfo, containerName) {
+function renderPageContent(data, containerName) {
     // 페이지 버튼 영역 생성
     const pageContainer = document.getElementById(containerName);
     pageContainer.innerHTML = '';
-    const totalPages = pageInfo['totalPages'];
-    const pageNumber = pageInfo['number'];
 
-    if (pageNumber !== totalPages - 1) {
+    const hasMore = data['hasMore'];
+
+    if (hasMore) {
+        const nextCursor = data['nextCursor'];
+        const cursorStreamNo = nextCursor['streamNo'];
+
         const pageDiv = document.createElement('div');
         pageDiv.classList.add('page-item');
         pageDiv.innerHTML = `<button class="load-more">더보기</button>`
@@ -435,10 +442,10 @@ function renderPageContent(pageInfo, containerName) {
         pageDiv.addEventListener('click', () => {
             if (containerName === 'vod-page-container') {
                 if (vodFilterOption === 'all') {
-                    loadVod(pageNumber + 1);
+                    loadVod(cursorStreamNo);
                 }
                 else {
-                    loadVodByCategory(pageNumber + 1, categoryNumber);
+                    loadVodByCategory(cursorStreamNo, categoryNumber);
                 }
             }
             else if (containerName === 'live-page-container') {

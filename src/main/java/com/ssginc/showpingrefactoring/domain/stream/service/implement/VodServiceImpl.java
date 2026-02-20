@@ -1,8 +1,14 @@
 package com.ssginc.showpingrefactoring.domain.stream.service.implement;
 
+import com.ssginc.showpingrefactoring.common.dto.SliceResponseDto;
 import com.ssginc.showpingrefactoring.common.exception.CustomException;
 import com.ssginc.showpingrefactoring.common.exception.ErrorCode;
+import com.ssginc.showpingrefactoring.domain.stream.dto.object.VodListCursor;
 import com.ssginc.showpingrefactoring.domain.stream.dto.response.StreamResponseDto;
+import com.ssginc.showpingrefactoring.domain.stream.repository.VodRowProjection;
+import com.ssginc.showpingrefactoring.domain.watch.dto.object.WatchHistoryCursor;
+import com.ssginc.showpingrefactoring.domain.watch.dto.response.WatchResponseDto;
+import com.ssginc.showpingrefactoring.domain.watch.repository.WatchRowProjection;
 import com.ssginc.showpingrefactoring.infrastructure.NCP.storage.StorageLoader;
 import com.ssginc.showpingrefactoring.domain.stream.repository.VodRepository;
 import com.ssginc.showpingrefactoring.domain.stream.service.VodService;
@@ -14,6 +20,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.io.File;
+import java.util.List;
 
 @Service
 @Slf4j
@@ -62,6 +69,50 @@ public class VodServiceImpl implements VodService {
         }
 
         return vodPage;
+    }
+
+    @Override
+    public SliceResponseDto<StreamResponseDto, VodListCursor> findVodsScroll(
+            Long categoryNo,
+            VodListCursor cursor,
+            int pageSize) {
+
+        List<VodRowProjection> rows = vodRepository.getVodScroll(
+                categoryNo,
+                (cursor == null ? null : cursor.streamNo()),
+                pageSize+1
+        );
+
+        boolean hasMore = rows.size() > pageSize;
+        if (hasMore) {
+            rows = rows.subList(0, pageSize);
+        }
+
+        VodListCursor nextStreamNoCursor = null;
+
+        if (hasMore && !rows.isEmpty()) {
+            var last = rows.get(rows.size() - 1);
+            nextStreamNoCursor = new VodListCursor(last.getStreamNo());
+        }
+
+        List<StreamResponseDto> content = rows.stream()
+                .map(r -> new StreamResponseDto(
+                        r.getStreamNo(),
+                        r.getStreamTitle(),
+                        r.getStreamDescription(),
+                        r.getStreamStatus(),
+                        r.getCategoryNo(),
+                        r.getCategoryName(),
+                        r.getProductName(),
+                        r.getProductPrice(),
+                        r.getProductSale(),
+                        r.getProductImg(),
+                        r.getStreamStartTime(),
+                        r.getStreamEndTime()
+                ))
+                .toList();
+
+        return SliceResponseDto.of(content, hasMore, nextStreamNoCursor);
     }
 
     /**

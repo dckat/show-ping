@@ -6,6 +6,9 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
+
+import java.util.List;
 
 public interface VodRepository extends JpaRepository<Stream, Long> {
 
@@ -71,4 +74,37 @@ public interface VodRepository extends JpaRepository<Stream, Long> {
     """)
     StreamResponseDto findVodByNo(Long streamNo);
 
+    /**
+     * VOD 목록 최신순 커서 기반 조회
+     * @param categoryNo    카테고리 번호 (null 허용)
+     * @param cursorStreamNo 마지막으로 확인한 영상 번호 (첫 페이지는 null)
+     * @param limitPlusOne   한 페이지 개수 + 1 (hasNext 판단용)
+     */
+    @Query(value = """
+        SELECT 
+            s.stream_no AS streamNo, 
+            s.stream_title AS streamTitle, 
+            s.stream_description AS streamDescription,
+            s.stream_status AS streamStatus, 
+            c.category_no AS categoryNo, 
+            c.category_name AS categoryName, 
+            p.product_name AS productName,
+            p.product_price AS productPrice, 
+            p.product_sale AS productSale, 
+            p.product_img AS productImg, 
+            s.stream_start_time AS streamStartTime, 
+            s.stream_end_time AS streamEndTime
+        FROM stream s
+        JOIN product p ON s.product_no = p.product_no
+        JOIN category c ON p.category_no = c.category_no
+        WHERE s.stream_status = 'ENDED'
+          AND (:categoryNo = 0 OR c.category_no = :categoryNo)
+          AND (:cursorStreamNo IS NULL OR s.stream_no < :cursorStreamNo)
+        ORDER BY s.stream_no DESC
+        LIMIT :limitPlusOne
+    """, nativeQuery = true)
+    List<VodRowProjection> getVodScroll(
+            @Param("categoryNo")        Long categoryNo,
+            @Param("cursorStreamNo")    Long cursorStreamNo,
+            @Param("limitPlusOne")      int limitPlusOne);
 }
