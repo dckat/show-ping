@@ -20,6 +20,8 @@ import org.springframework.transaction.PlatformTransactionManager;
 @Configuration
 @RequiredArgsConstructor
 public class VodRecommendBatchConfig {
+
+    private final FixedBackOffPolicy customBackOffPolicy;
     private final JobRepository jobRepository;
     private final PlatformTransactionManager tx;
 
@@ -48,14 +50,7 @@ public class VodRecommendBatchConfig {
                 .faultTolerant()
                 .retryLimit(3)
                 .retry(Exception.class)
-                .backOffPolicy(backOffPolicy())
+                .backOffPolicy(customBackOffPolicy)
                 .build();
-    }
-
-    @Bean
-    public FixedBackOffPolicy backOffPolicy() {
-        FixedBackOffPolicy policy = new FixedBackOffPolicy();
-        policy.setBackOffPeriod(2000L);
-        return policy;
     }
 }
