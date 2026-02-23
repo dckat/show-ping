@@ -1,8 +1,11 @@
 package com.ssginc.showpingrefactoring.batch.config;
 
+import com.ssginc.showpingrefactoring.batch.listener.JobFailureListener;
 import com.ssginc.showpingrefactoring.domain.stream.service.HlsService;
+import lombok.RequiredArgsConstructor;
 import org.springframework.batch.core.Job;
 import org.springframework.batch.core.Step;
+import org.springframework.batch.core.StepListener;
 import org.springframework.batch.core.configuration.annotation.EnableBatchProcessing;
 import org.springframework.batch.core.job.builder.JobBuilder;
 import org.springframework.batch.core.launch.support.RunIdIncrementer;
@@ -20,7 +23,10 @@ import org.springframework.transaction.PlatformTransactionManager;
  */
 @Configuration
 @EnableBatchProcessing
+@RequiredArgsConstructor
 public class HlsBatchConfig {
+
+    private final JobFailureListener jobFailureListener;
 
     /**
      * 지정된 JobRepository와 Step을 사용하여 HLS 저장 작업(Job)을 생성하는 메서드
@@ -33,6 +39,7 @@ public class HlsBatchConfig {
         return new JobBuilder("createHlsJob", jobRepository)
                 .incrementer(new RunIdIncrementer())
                 .start(createHlsStep)
+                .listener(jobFailureListener)
                 .build();
     }
 
