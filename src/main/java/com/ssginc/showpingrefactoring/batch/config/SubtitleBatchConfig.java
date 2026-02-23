@@ -1,6 +1,5 @@
-package com.ssginc.showpingrefactoring.common.config;
+package com.ssginc.showpingrefactoring.batch.config;
 
-import com.ssginc.showpingrefactoring.domain.stream.service.HlsService;
 import com.ssginc.showpingrefactoring.domain.stream.service.SubtitleService;
 import org.springframework.batch.core.Job;
 import org.springframework.batch.core.Step;
@@ -16,50 +15,12 @@ import org.springframework.transaction.PlatformTransactionManager;
 
 /**
  * @author dckat
- * 배치 작업 구성하는 클래스
+ * 자막 배치 작업 구성하는 클래스
  * <p>
  */
 @Configuration
 @EnableBatchProcessing
-public class BatchConfig {
-
-    /**
-     * 지정된 JobRepository와 Step을 사용하여 HLS 저장 작업(Job)을 생성하는 메서드
-     * @param jobRepository  JobRepository 객체
-     * @param createHlsStep    HLS 저장 Step
-     * @return 생성된 HLS 저장 Job
-     */
-    @Bean
-    public Job createHlsJob(JobRepository jobRepository, Step createHlsStep) {
-        return new JobBuilder("createHlsJob", jobRepository)
-                .incrementer(new RunIdIncrementer())
-                .start(createHlsStep)
-                .build();
-    }
-
-    /**
-     * 지정된 JobRepository, PlatformTransactionManager, 그리고 HlsService를 사용하여
-     * HLS 저장 Step을 생성하는 메서드
-     * @param jobRepository  JobRepository 객체
-     * @param tx             PlatformTransactionManager 객체
-     * @param hlsService     HlsService 객체
-     * @return 생성된 HLS 저장 Step
-     */
-    @Bean
-    public Step createHlsStep(JobRepository jobRepository,
-                            PlatformTransactionManager tx,
-                            HlsService hlsService) {
-        return new StepBuilder("createHlsStep", jobRepository)
-                .tasklet((contrib, ctx) -> {
-                    String title = ctx.getStepContext()
-                            .getStepExecution()
-                            .getJobParameters()
-                            .getString("title");
-                    hlsService.createHLS(title);
-                    return RepeatStatus.FINISHED;
-                }, tx)
-                .build();
-    }
+public class SubtitleBatchConfig {
 
     /**
      * 지정된 JobRepository와 Step을 사용하여 자막 생성 작업(Job)을 생성하는 메서드
