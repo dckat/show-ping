@@ -1,7 +1,9 @@
 package com.ssginc.showpingrefactoring.batch.config;
 
 import com.ssginc.showpingrefactoring.batch.dto.VodRecommendDto;
+import com.ssginc.showpingrefactoring.batch.job.VodRecommendProcessor;
 import com.ssginc.showpingrefactoring.batch.job.VodRecommendWriter;
+import com.ssginc.showpingrefactoring.batch.listener.JobFailureListener;
 import lombok.RequiredArgsConstructor;
 import org.springframework.batch.core.Job;
 import org.springframework.batch.core.Step;
@@ -23,12 +25,16 @@ public class VodRecommendBatchConfig {
 
     private final JdbcPagingItemReader<VodRecommendDto> jdbcPagingReader;
     private final VodRecommendWriter recommendWriter;
+    private final VodRecommendProcessor vodRecommendProcessor;
+
+    private final JobFailureListener jobFailureListener;
 
     @Bean
     public Job vodRecommendJob() {
         return new JobBuilder("vodRecommendJob", jobRepository)
                 .incrementer(new RunIdIncrementer())
                 .start(vodRecommendStep())
+                .listener(jobFailureListener)
                 .build();
     }
 
@@ -36,7 +42,8 @@ public class VodRecommendBatchConfig {
     public Step vodRecommendStep() {
         return new StepBuilder("vodRecommendStep", jobRepository)
                 .<VodRecommendDto, VodRecommendDto>chunk(500, tx)
-                .reader(jdbcPagingReader) // 필드로 주입받은 빈을 사용
+                .reader(jdbcPagingReader)
+                .processor(vodRecommendProcessor)
                 .writer(recommendWriter)
                 .faultTolerant()
                 .retryLimit(3)
