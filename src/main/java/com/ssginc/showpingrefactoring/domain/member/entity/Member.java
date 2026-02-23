@@ -12,6 +12,7 @@ import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import lombok.*;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
 
@@ -47,6 +48,12 @@ public class Member {
 
     @Column(name = "member_phone", length = 20, unique = true)
     private String memberPhone;
+
+    @Column(name = "member_gender", length = 10)
+    private String memberGender;
+
+    @Column(name = "member_birthdate")
+    private LocalDate memberBirthdate;
 
     @NotNull
     @Enumerated(EnumType.STRING)
