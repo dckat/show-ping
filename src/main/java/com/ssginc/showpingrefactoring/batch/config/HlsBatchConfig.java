@@ -1,6 +1,7 @@
 package com.ssginc.showpingrefactoring.batch.config;
 
 import com.ssginc.showpingrefactoring.batch.listener.JobFailureListener;
+import com.ssginc.showpingrefactoring.batch.util.CustomRetryTemplate;
 import com.ssginc.showpingrefactoring.domain.stream.service.HlsService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.batch.core.Job;
@@ -12,8 +13,10 @@ import org.springframework.batch.core.launch.support.RunIdIncrementer;
 import org.springframework.batch.core.repository.JobRepository;
 import org.springframework.batch.core.step.builder.StepBuilder;
 import org.springframework.batch.repeat.RepeatStatus;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.retry.support.RetryTemplate;
 import org.springframework.transaction.PlatformTransactionManager;
 
 /**
@@ -34,7 +37,7 @@ public class HlsBatchConfig {
      * @param createHlsStep    HLS 저장 Step
      * @return 생성된 HLS 저장 Job
      */
-    @Bean
+    @Bean (name = "createHlsJob")
     public Job createHlsJob(JobRepository jobRepository, Step createHlsStep) {
         return new JobBuilder("createHlsJob", jobRepository)
                 .incrementer(new RunIdIncrementer())
@@ -54,14 +57,21 @@ public class HlsBatchConfig {
     @Bean
     public Step createHlsStep(JobRepository jobRepository,
                               PlatformTransactionManager tx,
-                              HlsService hlsService) {
+                              HlsService hlsService,
+                              @Qualifier("CustomRetryTemplate") RetryTemplate retryTemplate) {
+
         return new StepBuilder("createHlsStep", jobRepository)
                 .tasklet((contrib, ctx) -> {
                     String title = ctx.getStepContext()
                             .getStepExecution()
                             .getJobParameters()
                             .getString("title");
-                    hlsService.createHLS(title);
+
+                    retryTemplate.execute(retryContext -> {
+                        hlsService.createHLS(title);
+                        return null;
+                    });
+
                     return RepeatStatus.FINISHED;
                 }, tx)
                 .build();

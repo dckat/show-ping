@@ -11,8 +11,10 @@ import org.springframework.batch.core.launch.support.RunIdIncrementer;
 import org.springframework.batch.core.repository.JobRepository;
 import org.springframework.batch.core.step.builder.StepBuilder;
 import org.springframework.batch.repeat.RepeatStatus;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.retry.support.RetryTemplate;
 import org.springframework.transaction.PlatformTransactionManager;
 
 /**
@@ -33,7 +35,7 @@ public class SubtitleBatchConfig {
      * @param createSubtitleStep  자막 생성 Step
      * @return 생성된 자막 생성 Job
      */
-    @Bean
+    @Bean(name = "createSubtitleJob")
     public Job createSubtitleJob(JobRepository jobRepository, Step createSubtitleStep) {
         return new JobBuilder("createSubtitleJob", jobRepository)
                 .incrementer(new RunIdIncrementer())
@@ -53,14 +55,20 @@ public class SubtitleBatchConfig {
     @Bean
     public Step createSubtitleStep(JobRepository jobRepository,
                                    PlatformTransactionManager tx,
-                                   SubtitleService subtitleService) {
+                                   SubtitleService subtitleService,
+                                   @Qualifier("CustomRetryTemplate") RetryTemplate retryTemplate) {
         return new StepBuilder("createSubtitleStep", jobRepository)
                 .tasklet((contrib, ctx) -> {
                     String title = ctx.getStepContext()
                             .getStepExecution()
                             .getJobParameters()
                             .getString("title");
-                    subtitleService.createSubtitle(title);
+
+                    retryTemplate.execute(retryContext -> {
+                        subtitleService.createSubtitle(title);
+                        return null;
+                    });
+
                     return RepeatStatus.FINISHED;
                 }, tx)
                 .build();
