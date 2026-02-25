@@ -7,7 +7,7 @@ import org.springframework.retry.backoff.FixedBackOffPolicy;
 @Configuration
 public class CustomBackOffPolicy {
 
-    @Bean
+    @Bean(name = "CustomBackOffPolicy")
     public FixedBackOffPolicy customBackOffPolicy() {
         FixedBackOffPolicy policy = new FixedBackOffPolicy();
         policy.setBackOffPeriod(2000L);
