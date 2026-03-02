@@ -560,8 +560,8 @@ function getVod() {
             sort: 'mostViewed'
         }
     }).then(response => {
-        const pageInfo = response.data['pageInfo'];
-        const vodContent = pageInfo['content'];
+        const data = response.data;
+        const vodContent = data['content'];
         const vodGrid = document.getElementById('vod-grid');
 
         vodGrid.innerHTML = '';
@@ -624,10 +624,9 @@ function getVodByCategory(categoryNumber) {
             sort: 'mostViewed'
         }
     }).then(response => {
-        const pageInfo = response.data['pageInfo'];
-        const vodContent = pageInfo['content'];
+        const data = response.data;
+        const vodContent = data['content'];
         const vodGrid = document.getElementById('vod-grid');
-        console.log(vodContent);
 
         if (vodContent == 0){
             vodGrid.innerHTML = '<p style="height: 200px; text-align: center">해당 카테고리의 VOD가 없습니다</p>';
