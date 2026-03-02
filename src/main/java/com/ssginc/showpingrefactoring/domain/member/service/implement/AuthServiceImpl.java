@@ -1,5 +1,6 @@
 package com.ssginc.showpingrefactoring.domain.member.service.implement;
 
+import com.ssginc.showpingrefactoring.domain.member.dto.object.MemberCacheProfileDto;
 import com.ssginc.showpingrefactoring.domain.member.dto.request.LoginRequestDto;
 import com.ssginc.showpingrefactoring.domain.member.dto.request.ReissueRequestDto;
 import com.ssginc.showpingrefactoring.domain.member.entity.Member;
@@ -11,9 +12,13 @@ import com.ssginc.showpingrefactoring.domain.member.service.AuthService;
 
 import com.ssginc.showpingrefactoring.domain.member.service.RedisTokenService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.time.Duration;
+import java.time.LocalDate;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -26,6 +31,9 @@ public class AuthServiceImpl implements AuthService {
     private final RedisTokenService redisTokenService;
     private final PasswordEncoder passwordEncoder;
 
+    @Qualifier("redisObjectTemplate")
+    private final RedisTemplate<String, Object> redisTemplate;
+
     @Override
     public Map<String, String> login(LoginRequestDto request) {
         String memberId = request.getMemberId();
@@ -37,6 +45,12 @@ public class AuthServiceImpl implements AuthService {
         if (!passwordEncoder.matches(rawPassword, member.getMemberPassword())) {
             throw new CustomException(ErrorCode.INVALID_PASSWORD);
         }
+
+        // Redis 캐싱 (Key: user:profile:123, Value: {ageGroup: "20", gender: "MALE"})
+        String cacheKey = "user:profile:" + member.getMemberId();
+        MemberCacheProfileDto profile = getMemberCacheProfile(member);
+
+        redisTemplate.opsForValue().set(cacheKey, profile, Duration.ofHours(24));
 
         String role = member.getMemberRole().name();
 
@@ -93,5 +107,15 @@ public class AuthServiceImpl implements AuthService {
     @Override
     public void deleteAllSessions(String memberId) {
         redisTokenService.deleteAllRefreshTokens(memberId);
+    }
+
+    @Override
+    public MemberCacheProfileDto getMemberCacheProfile(Member member) {
+        // 연령대 계산 및 정보 추출
+        long age = LocalDate.now().getYear() - member.getMemberBirthdate().getYear() + 1;
+        Long ageGroup = (age / 10) * 10;
+        String gender = member.getMemberGender();
+
+        return new MemberCacheProfileDto(ageGroup, gender);
     }
 }
