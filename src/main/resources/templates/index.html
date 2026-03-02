@@ -33,7 +33,7 @@
         <!-- 다음 배너 버튼 -->
         <button class="banner-btn next">&gt;</button>
     </div>
-    
+
     <!-- 카테고리 이동 버튼 영역 -->
     <div class="categories">
         <!-- '특급 혜택' 버튼 (무지개 효과 및 HOT 아이콘) -->
@@ -50,6 +50,16 @@
         <a th:href="@{/category/6}" class="category-button"><span class="icon">⌨️</span> 키보드</a>
     </div>
     
+    <hr>
+
+    <!-- VOD 추천 영역 -->
+    <div class="recommend" style="display: none;">
+        <h2>나와 비슷한 사람들은 뭘 볼까?</h2>
+        <!-- 추천 리스트 -->
+        <div class="recommend-grid" id="recommend-grid">
+        </div>
+    </div>
+
     <hr>
     
     <!-- 라이브 방송 상품 영역 -->
