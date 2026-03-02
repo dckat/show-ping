@@ -41,6 +41,20 @@ public class RedisConfig {
         return template;
     }
 
+    @Bean(name = "redisObjectTemplate")
+    public RedisTemplate<String, Object> redisObjectTemplate(RedisConnectionFactory connectionFactory) {
+        RedisTemplate<String, Object> template = new RedisTemplate<>();
+        template.setConnectionFactory(connectionFactory);
+
+        // Key는 문자열로 저장
+        template.setKeySerializer(new StringRedisSerializer());
+
+        // Value는 JSON 형태로 직렬화하여 객체 그대로 저장/조회 가능하게 설정
+        template.setValueSerializer(new GenericJackson2JsonRedisSerializer());
+
+        return template;
+    }
+
     @Bean
     public StringRedisTemplate stringRedisTemplate(RedisConnectionFactory connectionFactory) {
         return new StringRedisTemplate(connectionFactory);
