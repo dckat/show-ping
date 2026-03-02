@@ -2,6 +2,8 @@ package com.ssginc.showpingrefactoring.domain.stream.controller;
 
 import com.ssginc.showpingrefactoring.common.dto.PageResponseDto;
 import com.ssginc.showpingrefactoring.common.dto.SliceResponseDto;
+import com.ssginc.showpingrefactoring.domain.member.entity.Member;
+import com.ssginc.showpingrefactoring.domain.member.service.MemberService;
 import com.ssginc.showpingrefactoring.domain.stream.dto.object.VodListCursor;
 import com.ssginc.showpingrefactoring.domain.stream.dto.request.VodListRequestDto;
 import com.ssginc.showpingrefactoring.domain.stream.dto.request.VodListScrollRequestDto;
@@ -17,6 +19,8 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
@@ -34,6 +38,8 @@ public class VodApiController implements VodApiSpecification {
     private final VodService vodService;
 
     private final SubtitleService subtitleService;
+
+    private final MemberService memberService;
 
     /**
      * Vod 목록을 페이징하여 반환해주는 컨트롤러 메서드
@@ -96,6 +102,16 @@ public class VodApiController implements VodApiSpecification {
         return ResponseEntity.ok()
                 .contentType(MediaType.APPLICATION_JSON)
                 .body(subtitleJson);
+    }
+
+    @GetMapping("/recommend/list")
+    public ResponseEntity<?> getRecommendList(@AuthenticationPrincipal UserDetails userDetails) {
+        // 로그인한 사용자 No 가져오기
+        Member member = memberService.findMemberById(userDetails.getUsername());
+        Long memberNo = member.getMemberNo();
+
+        Map<String, Object> recommendList = vodService.getRecommendList(memberNo);
+        return ResponseEntity.ok(recommendList);
     }
 
 }

@@ -3,6 +3,9 @@ package com.ssginc.showpingrefactoring.domain.stream.service.implement;
 import com.ssginc.showpingrefactoring.common.dto.SliceResponseDto;
 import com.ssginc.showpingrefactoring.common.exception.CustomException;
 import com.ssginc.showpingrefactoring.common.exception.ErrorCode;
+import com.ssginc.showpingrefactoring.domain.member.dto.object.MemberCacheProfileDto;
+import com.ssginc.showpingrefactoring.domain.member.entity.Member;
+import com.ssginc.showpingrefactoring.domain.member.repository.MemberRepository;
 import com.ssginc.showpingrefactoring.domain.stream.dto.object.VodListCursor;
 import com.ssginc.showpingrefactoring.domain.stream.dto.response.StreamResponseDto;
 import com.ssginc.showpingrefactoring.domain.stream.repository.VodRowProjection;
@@ -17,10 +20,16 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 
 import java.io.File;
+import java.time.Duration;
+import java.time.LocalDate;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @Service
 @Slf4j
@@ -33,6 +42,10 @@ public class VodServiceImpl implements VodService {
     private final StorageLoader storageLoader;
 
     private final VodRepository vodRepository;
+
+    private final RedisTemplate<String, Object> redisTemplate;
+
+    private final MemberRepository memberRepository;
 
     @Override
     public String uploadVideo(String title) {
@@ -130,4 +143,40 @@ public class VodServiceImpl implements VodService {
 
         return vodDto;
     }
+
+    @Override
+    public Map<String, Object> getRecommendList(Long userId) {
+        String profileKey = "user:profile:" + userId;
+
+        // Redis 내 사용자 프로필(연령대, 성별) 확인
+        MemberCacheProfileDto profile = (MemberCacheProfileDto) redisTemplate.opsForValue().get(profileKey);
+
+        // 캐시에 없으면 DB 조회 후 Redis에 저장
+        if (profile == null) {
+            Member member = memberRepository.findById(userId)
+                    .orElseThrow(() -> new RuntimeException("사용자를 찾을 수 없습니다."));
+
+            // 연령대 계산 (한국 나이 기준 예시)
+            long age = LocalDate.now().getYear() - member.getMemberBirthdate().getYear() + 1;
+            Long ageGroup = (age / 10) * 10;
+
+            profile = new MemberCacheProfileDto(ageGroup, member.getMemberGender());
+
+            // 24시간 동안 캐싱
+            redisTemplate.opsForValue().set(profileKey, profile, Duration.ofHours(24));
+        }
+
+        // 해당 연령/성별 조합의 추천 VOD 리스트를 Redis에서 조회
+        // Redis 키 ex: "recommend:20:MALE"
+        String recommendKey = "recommend:" + profile.getAgeGroup() + ":" + profile.getGender();
+        List<Object> vodList = redisTemplate.opsForList().range(recommendKey, 0, 4);
+
+        // 4. 프론트엔드 응답용 맵 구성
+        Map<String, Object> result = new HashMap<>();
+        result.put("userInfo", profile);
+        result.put("data", vodList != null ? vodList : Collections.emptyList());
+
+        return result;
+    }
+
 }
