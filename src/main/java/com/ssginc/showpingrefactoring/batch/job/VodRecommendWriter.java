@@ -1,6 +1,8 @@
 package com.ssginc.showpingrefactoring.batch.job;
 
-import com.ssginc.showpingrefactoring.batch.dto.VodRecommendDto;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.ssginc.showpingrefactoring.domain.stream.dto.object.VodRecommendDto;
 import lombok.RequiredArgsConstructor;
 import org.springframework.batch.item.Chunk;
 import org.springframework.batch.item.ItemWriter;
@@ -13,15 +15,15 @@ import java.util.concurrent.TimeUnit;
 @RequiredArgsConstructor
 public class VodRecommendWriter implements ItemWriter<VodRecommendDto> {
 
-    private final RedisTemplate<String, String> redisTemplate;
+    private final RedisTemplate<String, Object> redisTemplate;
 
     @Override
-    public void write(Chunk<? extends VodRecommendDto> chunk) {
+    public void write(Chunk<? extends VodRecommendDto> chunk) throws JsonProcessingException {
         for (VodRecommendDto item : chunk) {
             String key = String.format("recommend:age:%d:gender:%s", item.getAgeGroup(), item.getGender());
 
-            // Redis 저장 (score = viewCount)
-            redisTemplate.opsForZSet().add(key, String.valueOf(item.getStreamNo()), item.getViewCount());
+            redisTemplate.opsForZSet().add(key, item, (double) item.getViewCount());
+
             redisTemplate.expire(key, 25, TimeUnit.HOURS);
         }
     }
