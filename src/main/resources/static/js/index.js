@@ -76,12 +76,17 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     });
 
+
+
     // 초기 인기 상품 로드 (기본 카테고리 0 : ALL)
     getProduct(0);
     getProductSale(0);
 
     setupLiveFilterButtons();
     setupVodFilterButtons();
+
+    // 로그인한 회원과 비슷한 연령대. 성별의 자주보는 영상 데이터 추천 fetch
+    getRecommend();
     getBroadCast();
     getVod();
 
@@ -351,6 +356,73 @@ function setupVodFilterButtons() {
                 });
             })
         });
+}
+
+function getRecommend() {
+    axios.get('/api/vod/recommend/list', {
+        withCredentials: true   // 쿠키 인증 방식
+    }).then(response => {
+        const data = response.data;
+        const recommendContents = data.contents;
+
+        console.log(recommendContents);
+
+        if (recommendContents.length > 0) {
+            const recommendSection = document.querySelector('.recommend');
+
+            const recommendGrid = document.getElementById('recommend-grid');
+            recommendGrid.innerHTML = '';
+
+            recommendContents.forEach(recommend => {
+                const recommendDiv = document.createElement('div');
+                recommendDiv.classList.add('recommend-item');
+
+                const productPrice = recommend.productPrice;
+                const discountRate = recommend.productSale;
+                const discountedPrice = Math.floor(productPrice * ((100 - discountRate) / 100));
+                const formattedFinalPrice = discountedPrice.toLocaleString('ko-KR');
+
+                recommendDiv.innerHTML = `
+                            <div class="stream-img-container">
+                                <img src="${recommend.productImg}" alt="${recommend.productName}" />
+                            </div>
+                            <p id="title" style="font-size: 15px; font-weight: bold; margin: 8px 0 4px;">${recommend.streamTitle}</p>
+                            <div class="product-price" style="display: flex; flex-direction: row; gap: 2px;
+                            font-size: 15px; color: #000; margin: 4px 0;">
+                                <span class="product-sale-percent" id="product-sale-percent" style="color: red; 
+                                font-weight: bold; margin-top: 1px; margin-right: 3px; font-size: 12px">${recommend.productSale} %</span>
+                                ${formattedFinalPrice}원
+                            </div>
+                `;
+
+                if (discountRate === 0) {
+                    recommendDiv.querySelector("#product-sale-percent").style.display = "none";
+                } else {
+                    recommendDiv.querySelector("#product-sale-percent").style.display = "block";
+                }
+
+                // VOD 클릭 시 상세 및 시청 페이지로 이동
+                recommendDiv.addEventListener('click', () => {
+                    window.location.href = `/watch/vod/${recommend.streamNo}`;
+                });
+
+                recommendGrid.appendChild(recommendDiv);
+            })
+            recommendSection.style.display = "block";
+        }
+    }).catch(error => {
+        const recommendSection = document.querySelector('.recommend');
+
+        if (recommendSection) {
+            recommendSection.style.display = "none";
+        }
+
+        if (error.response && error.response.status === 401) {
+            console.warn("로그인이 만료되었거나 쿠키가 없습니다.");
+        } else {
+            console.error("추천 섹션 로드 실패:", error);
+        }
+    });
 }
 
 function getBroadCast() {
