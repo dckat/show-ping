@@ -168,7 +168,7 @@ public class VodServiceImpl implements VodService {
         // 해당 연령/성별 조합의 추천 VOD 리스트를 Redis에서 조회
         // Redis 키 ex: "recommend:age:20:gender:MALE"
         String key = String.format("recommend:age:%d:gender:%s", profile.getAgeGroup(), profile.getGender());
-        Set<Object> results = redisTemplate.opsForZSet().reverseRange(key, 0, -1);
+        Set<Object> results = redisTemplate.opsForZSet().reverseRange(key, 0, 3);
 
         List<VodRecommendDto> recommendList = results.stream()
                 .map(obj -> {
