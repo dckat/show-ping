@@ -1,5 +1,6 @@
 package com.ssginc.showpingrefactoring.domain.stream.service.implement;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ssginc.showpingrefactoring.common.dto.SliceResponseDto;
 import com.ssginc.showpingrefactoring.common.exception.CustomException;
 import com.ssginc.showpingrefactoring.common.exception.ErrorCode;
@@ -7,11 +8,9 @@ import com.ssginc.showpingrefactoring.domain.member.dto.object.MemberCacheProfil
 import com.ssginc.showpingrefactoring.domain.member.entity.Member;
 import com.ssginc.showpingrefactoring.domain.member.repository.MemberRepository;
 import com.ssginc.showpingrefactoring.domain.stream.dto.object.VodListCursor;
+import com.ssginc.showpingrefactoring.domain.stream.dto.object.VodRecommendDto;
 import com.ssginc.showpingrefactoring.domain.stream.dto.response.StreamResponseDto;
 import com.ssginc.showpingrefactoring.domain.stream.repository.VodRowProjection;
-import com.ssginc.showpingrefactoring.domain.watch.dto.object.WatchHistoryCursor;
-import com.ssginc.showpingrefactoring.domain.watch.dto.response.WatchResponseDto;
-import com.ssginc.showpingrefactoring.domain.watch.repository.WatchRowProjection;
 import com.ssginc.showpingrefactoring.infrastructure.NCP.storage.StorageLoader;
 import com.ssginc.showpingrefactoring.domain.stream.repository.VodRepository;
 import com.ssginc.showpingrefactoring.domain.stream.service.VodService;
@@ -26,10 +25,8 @@ import org.springframework.stereotype.Service;
 import java.io.File;
 import java.time.Duration;
 import java.time.LocalDate;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 @Slf4j
@@ -46,6 +43,8 @@ public class VodServiceImpl implements VodService {
     private final RedisTemplate<String, Object> redisTemplate;
 
     private final MemberRepository memberRepository;
+
+    private final ObjectMapper objectMapper;
 
     @Override
     public String uploadVideo(String title) {
@@ -145,7 +144,7 @@ public class VodServiceImpl implements VodService {
     }
 
     @Override
-    public Map<String, Object> getRecommendList(Long userId) {
+    public List<VodRecommendDto> getRecommendInfo(Long userId) {
         String profileKey = "user:profile:" + userId;
 
         // Redis 내 사용자 프로필(연령대, 성별) 확인
@@ -167,16 +166,24 @@ public class VodServiceImpl implements VodService {
         }
 
         // 해당 연령/성별 조합의 추천 VOD 리스트를 Redis에서 조회
-        // Redis 키 ex: "recommend:20:MALE"
-        String recommendKey = "recommend:" + profile.getAgeGroup() + ":" + profile.getGender();
-        List<Object> vodList = redisTemplate.opsForList().range(recommendKey, 0, 4);
+        // Redis 키 ex: "recommend:age:20:gender:MALE"
+        String key = String.format("recommend:age:%d:gender:%s", profile.getAgeGroup(), profile.getGender());
+        Set<Object> results = redisTemplate.opsForZSet().reverseRange(key, 0, -1);
 
-        // 4. 프론트엔드 응답용 맵 구성
-        Map<String, Object> result = new HashMap<>();
-        result.put("userInfo", profile);
-        result.put("data", vodList != null ? vodList : Collections.emptyList());
+        List<VodRecommendDto> recommendList = results.stream()
+                .map(obj -> {
+                    // 이미 객체 타입이라면 캐스팅,
+                    // 만약 LinkedHashMap으로 리턴된다면 objectMapper로 컨버팅
+                    if (obj instanceof VodRecommendDto) {
+                        return (VodRecommendDto) obj;
+                    } else {
+                        // GenericJackson2JsonRedisSerializer 등을 쓸 때 가끔 발생
+                        return objectMapper.convertValue(obj, VodRecommendDto.class);
+                    }
+                })
+                .collect(Collectors.toList());
 
-        return result;
+        return recommendList;
     }
 
 }

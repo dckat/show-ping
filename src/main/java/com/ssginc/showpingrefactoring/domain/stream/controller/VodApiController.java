@@ -5,6 +5,7 @@ import com.ssginc.showpingrefactoring.common.dto.SliceResponseDto;
 import com.ssginc.showpingrefactoring.domain.member.entity.Member;
 import com.ssginc.showpingrefactoring.domain.member.service.MemberService;
 import com.ssginc.showpingrefactoring.domain.stream.dto.object.VodListCursor;
+import com.ssginc.showpingrefactoring.domain.stream.dto.object.VodRecommendDto;
 import com.ssginc.showpingrefactoring.domain.stream.dto.request.VodListRequestDto;
 import com.ssginc.showpingrefactoring.domain.stream.dto.request.VodListScrollRequestDto;
 import com.ssginc.showpingrefactoring.domain.stream.dto.response.StreamResponseDto;
@@ -23,6 +24,8 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -106,12 +109,15 @@ public class VodApiController implements VodApiSpecification {
 
     @GetMapping("/recommend/list")
     public ResponseEntity<?> getRecommendList(@AuthenticationPrincipal UserDetails userDetails) {
-        // 로그인한 사용자 No 가져오기
         Member member = memberService.findMemberById(userDetails.getUsername());
         Long memberNo = member.getMemberNo();
 
-        Map<String, Object> recommendList = vodService.getRecommendList(memberNo);
-        return ResponseEntity.ok(recommendList);
+        List<VodRecommendDto> recommendInfo = vodService.getRecommendInfo(memberNo);
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("contents", recommendInfo);
+
+        return ResponseEntity.ok(response);
     }
 
 }

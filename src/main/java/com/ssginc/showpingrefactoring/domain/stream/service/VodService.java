@@ -2,15 +2,13 @@ package com.ssginc.showpingrefactoring.domain.stream.service;
 
 import com.ssginc.showpingrefactoring.common.dto.SliceResponseDto;
 import com.ssginc.showpingrefactoring.domain.stream.dto.object.VodListCursor;
+import com.ssginc.showpingrefactoring.domain.stream.dto.object.VodRecommendDto;
 import com.ssginc.showpingrefactoring.domain.stream.dto.response.StreamResponseDto;
-import com.ssginc.showpingrefactoring.domain.watch.dto.object.WatchHistoryCursor;
-import com.ssginc.showpingrefactoring.domain.watch.dto.response.WatchResponseDto;
 import jakarta.validation.constraints.Min;
-import jakarta.validation.constraints.NotNull;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
-import java.util.Map;
+import java.util.List;
 
 public interface VodService {
 
@@ -25,5 +23,5 @@ public interface VodService {
             VodListCursor cursor,
             int pageSize);
 
-    Map<String, Object> getRecommendList(Long userId);
+    List<VodRecommendDto> getRecommendInfo(Long userId);
 }
