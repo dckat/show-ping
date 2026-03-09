@@ -23,5 +23,5 @@ public interface VodService {
             VodListCursor cursor,
             int pageSize);
 
-    List<VodRecommendDto> getRecommendInfo(Long userId);
+    List<VodRecommendDto> getRecommendInfo(Long memberNo, String memberId);
 }

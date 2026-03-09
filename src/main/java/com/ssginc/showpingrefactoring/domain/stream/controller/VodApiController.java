@@ -110,9 +110,11 @@ public class VodApiController implements VodApiSpecification {
     @GetMapping("/recommend/list")
     public ResponseEntity<?> getRecommendList(@AuthenticationPrincipal UserDetails userDetails) {
         Member member = memberService.findMemberById(userDetails.getUsername());
-        Long memberNo = member.getMemberNo();
 
-        List<VodRecommendDto> recommendInfo = vodService.getRecommendInfo(memberNo);
+        Long memberNo = member.getMemberNo();
+        String memberId = member.getMemberId();
+
+        List<VodRecommendDto> recommendInfo = vodService.getRecommendInfo(memberNo, memberId);
 
         Map<String, Object> response = new HashMap<>();
         response.put("contents", recommendInfo);

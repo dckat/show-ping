@@ -46,6 +46,9 @@ public class VodServiceImpl implements VodService {
 
     private final ObjectMapper objectMapper;
 
+    @Value("${profile.expiration.hours}")
+    private Long memberProfileExpiration;
+
     @Override
     public String uploadVideo(String title) {
         String filePath = VIDEO_PATH + title;
@@ -144,15 +147,15 @@ public class VodServiceImpl implements VodService {
     }
 
     @Override
-    public List<VodRecommendDto> getRecommendInfo(Long userId) {
-        String profileKey = "user:profile:" + userId;
+    public List<VodRecommendDto> getRecommendInfo(Long memberNo, String memberId) {
+        String profileKey = "user:profile:" + memberId;
 
         // Redis 내 사용자 프로필(연령대, 성별) 확인
         MemberCacheProfileDto profile = (MemberCacheProfileDto) redisTemplate.opsForValue().get(profileKey);
 
         // 캐시에 없으면 DB 조회 후 Redis에 저장
         if (profile == null) {
-            Member member = memberRepository.findById(userId)
+            Member member = memberRepository.findById(memberNo)
                     .orElseThrow(() -> new RuntimeException("사용자를 찾을 수 없습니다."));
 
             // 연령대 계산 (한국 나이 기준 예시)
@@ -161,8 +164,8 @@ public class VodServiceImpl implements VodService {
 
             profile = new MemberCacheProfileDto(ageGroup, member.getMemberGender());
 
-            // 24시간 동안 캐싱
-            redisTemplate.opsForValue().set(profileKey, profile, Duration.ofHours(24));
+            // 만료시간 설정: 1시간
+            redisTemplate.opsForValue().set(profileKey, profile, Duration.ofHours(memberProfileExpiration));
         }
 
         // 해당 연령/성별 조합의 추천 VOD 리스트를 Redis에서 조회
