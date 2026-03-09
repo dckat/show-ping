@@ -296,7 +296,7 @@ a:active {
 .live-item, .vod-item, .recommend-item {
     padding: 15px;
     width: 250px; /* 상품 카드 크기 조정 */
-    height: 400px;
+    height: 320px;
     text-align: center; /* 텍스트 가운데 정렬 */
     border-radius: 10px;
     display: flex;
@@ -317,9 +317,9 @@ a:active {
 }
 
 /* 이미지 스타일 */
-.live-item img, .vod-item img .recommend-item img {
+.live-item img, .vod-item img, .recommend-item img {
     max-width: 180px; /* 이미지 크기 조정 */
-    max-height: 180px;
+    max-height: 150px;
     display: block;
     margin-bottom: 10px;
 }
