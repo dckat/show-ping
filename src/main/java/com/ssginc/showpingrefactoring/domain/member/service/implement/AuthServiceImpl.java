@@ -2,7 +2,6 @@ package com.ssginc.showpingrefactoring.domain.member.service.implement;
 
 import com.ssginc.showpingrefactoring.domain.member.dto.object.MemberCacheProfileDto;
 import com.ssginc.showpingrefactoring.domain.member.dto.request.LoginRequestDto;
-import com.ssginc.showpingrefactoring.domain.member.dto.request.ReissueRequestDto;
 import com.ssginc.showpingrefactoring.domain.member.entity.Member;
 import com.ssginc.showpingrefactoring.common.exception.CustomException;
 import com.ssginc.showpingrefactoring.common.exception.ErrorCode;
@@ -13,6 +12,7 @@ import com.ssginc.showpingrefactoring.domain.member.service.AuthService;
 import com.ssginc.showpingrefactoring.domain.member.service.RedisTokenService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -31,6 +31,9 @@ public class AuthServiceImpl implements AuthService {
     private final RedisTokenService redisTokenService;
     private final PasswordEncoder passwordEncoder;
 
+    @Value("${profile.expiration.hours}")
+    private Long memberProfileExpiration;
+
     @Qualifier("redisObjectTemplate")
     private final RedisTemplate<String, Object> redisTemplate;
 
@@ -46,11 +49,12 @@ public class AuthServiceImpl implements AuthService {
             throw new CustomException(ErrorCode.INVALID_PASSWORD);
         }
 
-        // Redis 캐싱 (Key: user:profile:123, Value: {ageGroup: "20", gender: "MALE"})
+        // 캐싱용 회원 프로파일 (Key: user:profile:123, Value: {ageGroup: "20", gender: "MALE"})
         String cacheKey = "user:profile:" + member.getMemberId();
         MemberCacheProfileDto profile = getMemberCacheProfile(member);
 
-        redisTemplate.opsForValue().set(cacheKey, profile, Duration.ofHours(24));
+        // 만료시간: 1시간 (accessToken 유효기간에 맞춰서 설정)
+        redisTemplate.opsForValue().set(cacheKey, profile, Duration.ofHours(memberProfileExpiration));
 
         String role = member.getMemberRole().name();
 
@@ -101,12 +105,20 @@ public class AuthServiceImpl implements AuthService {
         boolean ok = redisTokenService.rotateRefreshToken(memberId, refreshTokenFromCookie, newRT);
         if (!ok) throw new CustomException(ErrorCode.INVALID_REFRESH_TOKEN);
 
+        // 캐싱용 프로파일 재발급 (Key: user:profile:123, Value: {ageGroup: "20", gender: "MALE"})
+        String cacheKey = "user:profile:" + member.getMemberId();
+        MemberCacheProfileDto profile = getMemberCacheProfile(member);
+
+        // 만료시간: 1시간 (accessToken 유효기간에 맞춰서 설정)
+        redisTemplate.opsForValue().set(cacheKey, profile, Duration.ofHours(memberProfileExpiration));
+
         return new String[]{newAT, newRT};
     }
 
     @Override
     public void deleteAllSessions(String memberId) {
         redisTokenService.deleteAllRefreshTokens(memberId);
+        deleteUserProfile(memberId);
     }
 
     @Override
@@ -117,5 +129,14 @@ public class AuthServiceImpl implements AuthService {
         String gender = member.getMemberGender();
 
         return new MemberCacheProfileDto(ageGroup, gender);
+    }
+
+    public void deleteUserProfile(String memberId) {
+        String key = "user:profile:" + memberId;
+
+        boolean ok = redisTemplate.delete(key);
+
+        if (!ok)
+            throw new CustomException(ErrorCode.USER_NOT_FOUND);
     }
 }
