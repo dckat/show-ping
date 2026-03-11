@@ -1,6 +1,6 @@
 package com.ssginc.showpingrefactoring.batch.config;
 
-import com.ssginc.showpingrefactoring.batch.dto.VodRecommendDto;
+import com.ssginc.showpingrefactoring.domain.stream.dto.object.VodRecommendDto;
 import com.ssginc.showpingrefactoring.batch.job.VodRecommendProcessor;
 import com.ssginc.showpingrefactoring.batch.job.VodRecommendWriter;
 import com.ssginc.showpingrefactoring.batch.listener.JobFailureListener;

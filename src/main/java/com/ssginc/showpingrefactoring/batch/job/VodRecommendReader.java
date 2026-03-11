@@ -1,6 +1,6 @@
 package com.ssginc.showpingrefactoring.batch.job;
 
-import com.ssginc.showpingrefactoring.batch.dto.VodRecommendDto;
+import com.ssginc.showpingrefactoring.domain.stream.dto.object.VodRecommendDto;
 import lombok.RequiredArgsConstructor;
 import org.springframework.batch.item.database.JdbcPagingItemReader;
 import org.springframework.batch.item.database.Order;
@@ -36,27 +36,29 @@ public class VodRecommendReader {
         SqlPagingQueryProviderFactoryBean factory = new SqlPagingQueryProviderFactoryBean();
         factory.setDataSource(dataSource);
 
-        // SELECT 절: 연령대 계산 로직
         factory.setSelectClause("""
-            FLOOR(TIMESTAMPDIFF(YEAR, m.member_birthdate, CURDATE()) / 10) * 10 AS ageGroup,
-            m.member_gender AS gender,
-            w.stream_no AS streamNo,
-            COUNT(*) AS viewCount
+        FLOOR(TIMESTAMPDIFF(YEAR, m.member_birthdate, CURDATE()) / 10) * 10 AS ageGroup,
+        m.member_gender AS gender,
+        w.stream_no AS streamNo,
+        COUNT(*) AS viewCount,
+        MAX(s.stream_title) AS streamTitle,
+        MAX(p.product_name) AS productName,
+        MAX(p.product_price) AS productPrice,
+        MAX(p.product_sale) AS productSale,
+        MAX(p.product_img) AS productImg
         """);
 
-        // FROM 절
         factory.setFromClause("""
-            FROM watch w
-            JOIN member m ON w.member_no = m.member_no
+        FROM watch w
+        JOIN member m ON w.member_no = m.member_no
+        JOIN stream s ON w.stream_no = s.stream_no
+        JOIN product p ON s.product_no = p.product_no
         """);
 
-        // 필터링 기준: 최근 7일 이내
-        factory.setWhereClause("w.watch_time >= DATE_SUB(NOW(), INTERVAL 7 DAYS)");
+        factory.setWhereClause("w.watch_time >= DATE_SUB(NOW(), INTERVAL 7 DAY)");
 
-        factory.setGroupClause("ageGroup, m.member_gender, w.stream_no");
+        factory.setGroupClause("ageGroup, gender, w.stream_no");
 
-        // 정렬 설정 (PagingReader는 반드시 최소 한 개 이상의 정렬 키가 필요함)
-        // 여기서는 viewCount 내림차순을 위해 Map 활용
         Map<String, Order> sortKeys = new HashMap<>();
         sortKeys.put("ageGroup", Order.ASCENDING);
         sortKeys.put("viewCount", Order.DESCENDING);

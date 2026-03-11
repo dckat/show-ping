@@ -283,7 +283,7 @@ a:active {
     font-weight: bold;
 }
 
-.live-grid, .vod-grid {
+.live-grid, .vod-grid, .recommend-grid{
     display: grid;
     grid-template-columns: repeat(4, 1fr); /* 1개씩 한 줄 */
     justify-items: center; /* 그리드 아이템을 가운데 정렬 */
@@ -293,10 +293,10 @@ a:active {
 }
 
 /* 개별 상품 박스 */
-.live-item {
+.live-item, .vod-item, .recommend-item {
     padding: 15px;
     width: 250px; /* 상품 카드 크기 조정 */
-    height: 400px;
+    height: 320px;
     text-align: center; /* 텍스트 가운데 정렬 */
     border-radius: 10px;
     display: flex;
@@ -305,20 +305,7 @@ a:active {
     align-items: center; /* 내부 요소 수평 정렬 */
 }
 
-/* 개별 상품 박스 */
-.vod-item {
-    padding: 15px;
-    width: 250px; /* 상품 카드 크기 조정 */
-    height: 400px;
-    text-align: center; /* 텍스트 가운데 정렬 */
-    border-radius: 10px;
-    display: flex;
-    flex-direction: column;
-    justify-content: center; /* 내부 요소 수직 정렬 */
-    align-items: center; /* 내부 요소 수평 정렬 */
-}
-
-.live-item:hover, .vod-item:hover {
+.live-item:hover, .vod-item:hover, .recommend-item:hover {
     padding: 15px;
     text-align: center; /* 텍스트 가운데 정렬 */
     border-radius: 10px;
@@ -330,9 +317,9 @@ a:active {
 }
 
 /* 이미지 스타일 */
-.live-item img, .vod-item img {
+.live-item img, .vod-item img, .recommend-item img {
     max-width: 180px; /* 이미지 크기 조정 */
-    max-height: 180px;
+    max-height: 150px;
     display: block;
     margin-bottom: 10px;
 }
@@ -416,15 +403,6 @@ a:active {
 .popular-items{
     display: grid;
     grid-template-columns: repeat(4, 1fr); /* 4개씩 한 줄 */
-    justify-items: center; /* 그리드 아이템을 가운데 정렬 */
-    gap: 15px;
-    width: 100%;
-    margin-top: 10px;
-}
-
-.live-grid, .vod-grid {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr); /* 1개씩 한 줄 */
     justify-items: center; /* 그리드 아이템을 가운데 정렬 */
     gap: 15px;
     width: 100%;

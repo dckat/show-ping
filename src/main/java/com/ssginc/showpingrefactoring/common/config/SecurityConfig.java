@@ -100,7 +100,8 @@ public class SecurityConfig {
                                 "/api/payments/complete", "/api/chat/**",
                                 "/watch/history/**","/api/watch/history/list","/api/watch/history/list/**",
                                 "/cart/**", "/product/product_cart", "/payment/**",
-                                "/product/product_payment", "/success/**", "/payment/success/**","/api/auth/user-info"
+                                "/product/product_payment", "/success/**", "/payment/success/**","/api/auth/user-info",
+                                "/api/vod/recommend/list"
                         ).hasAnyRole("USER", "ADMIN")
                         // 그 외
                         .anyRequest().authenticated()

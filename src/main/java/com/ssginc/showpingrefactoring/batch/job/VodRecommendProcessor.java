@@ -1,6 +1,6 @@
 package com.ssginc.showpingrefactoring.batch.job;
 
-import com.ssginc.showpingrefactoring.batch.dto.VodRecommendDto;
+import com.ssginc.showpingrefactoring.domain.stream.dto.object.VodRecommendDto;
 import org.springframework.batch.item.ItemProcessor;
 import org.springframework.stereotype.Component;
 

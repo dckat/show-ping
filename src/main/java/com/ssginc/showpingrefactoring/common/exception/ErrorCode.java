@@ -29,7 +29,7 @@ public enum ErrorCode {
     AUTH_FORBIDDEN(HttpStatus.FORBIDDEN, "ME013", "접근이 거부되었습니다."),
     ACCESS_TOKEN_EXPIRED(HttpStatus.UNAUTHORIZED, "ME014", "Access Token이 만료되었습니다."),
     INVALID_ACCESS_TOKEN(HttpStatus.UNAUTHORIZED, "ME015", "Access Token이 유효하지 않습니다."),
-
+    PROFILE_DELETE_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "ME016", "프로파일이 정상적으로 삭제되지 않았습니다."),
 
     // [라이브.VOD 관련 에러 코드]
     // [공통]
