@@ -432,8 +432,13 @@ function onLiveOffer(error, offerSdp) {
 function onViewOffer(error, offerSdp) {
     if (error)
         return console.error('Error generating the offer');
+
+    const pathSegments = window.location.pathname.split('/');
+    const streamNo = pathSegments[pathSegments.length - 1];
+
     var message = {
         id : 'viewer',
+        streamNo: streamNo,
         sdpOffer : offerSdp
     }
     sendLiveMessage(message);
