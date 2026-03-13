@@ -266,10 +266,13 @@ public class LiveServiceImpl implements LiveService {
     @Override
     public void incrementCount(String streamNo) {
         String key = COUNT_KEY_PREFIX + streamNo;
-
         redisTemplate.opsForValue().increment(key);
+    }
 
-        System.out.println("시청수 증가 발생 " + redisTemplate.opsForValue().get(key) + "명");
+    @Override
+    public void decrementCount(String streamNo) {
+        String key = COUNT_KEY_PREFIX + streamNo;
+        redisTemplate.opsForValue().decrement(key);
     }
 
 }

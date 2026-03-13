@@ -29,4 +29,5 @@ public interface LiveService {
 
     void incrementCount(String streamNo);
 
+    void decrementCount(String streamNo);
 }

@@ -251,6 +251,16 @@ public class LiveHandler extends TextWebSocketHandler {
 
     @Override
     public void afterConnectionClosed(WebSocketSession session, CloseStatus status) throws Exception {
+        String streamNo = (String) session.getAttributes().get("streamNo");
+
+        if (streamNo != null && viewers.containsKey(session.getId())) {
+            viewers.remove(session.getId());
+
+            liveService.decrementCount(streamNo);
+
+            log.info("시청자 퇴장: streamNo={}, sessionId={}", streamNo, session.getId());
+        }
+
         stop(session);
     }
 
