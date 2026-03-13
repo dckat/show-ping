@@ -1,14 +1,16 @@
 package com.ssginc.showpingrefactoring.domain.stream.service.implement;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ssginc.showpingrefactoring.common.dto.SliceResponseDto;
 import com.ssginc.showpingrefactoring.common.exception.CustomException;
 import com.ssginc.showpingrefactoring.common.exception.ErrorCode;
+import com.ssginc.showpingrefactoring.domain.member.dto.object.MemberCacheProfileDto;
+import com.ssginc.showpingrefactoring.domain.member.entity.Member;
+import com.ssginc.showpingrefactoring.domain.member.repository.MemberRepository;
 import com.ssginc.showpingrefactoring.domain.stream.dto.object.VodListCursor;
+import com.ssginc.showpingrefactoring.domain.stream.dto.object.VodRecommendDto;
 import com.ssginc.showpingrefactoring.domain.stream.dto.response.StreamResponseDto;
 import com.ssginc.showpingrefactoring.domain.stream.repository.VodRowProjection;
-import com.ssginc.showpingrefactoring.domain.watch.dto.object.WatchHistoryCursor;
-import com.ssginc.showpingrefactoring.domain.watch.dto.response.WatchResponseDto;
-import com.ssginc.showpingrefactoring.domain.watch.repository.WatchRowProjection;
 import com.ssginc.showpingrefactoring.infrastructure.NCP.storage.StorageLoader;
 import com.ssginc.showpingrefactoring.domain.stream.repository.VodRepository;
 import com.ssginc.showpingrefactoring.domain.stream.service.VodService;
@@ -17,10 +19,14 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 
 import java.io.File;
-import java.util.List;
+import java.time.Duration;
+import java.time.LocalDate;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 @Slf4j
@@ -33,6 +39,15 @@ public class VodServiceImpl implements VodService {
     private final StorageLoader storageLoader;
 
     private final VodRepository vodRepository;
+
+    private final RedisTemplate<String, Object> redisTemplate;
+
+    private final MemberRepository memberRepository;
+
+    private final ObjectMapper objectMapper;
+
+    @Value("${profile.expiration.hours}")
+    private Long memberProfileExpiration;
 
     @Override
     public String uploadVideo(String title) {
@@ -130,4 +145,48 @@ public class VodServiceImpl implements VodService {
 
         return vodDto;
     }
+
+    @Override
+    public List<VodRecommendDto> getRecommendInfo(Long memberNo, String memberId) {
+        String profileKey = "user:profile:" + memberId;
+
+        // Redis 내 사용자 프로필(연령대, 성별) 확인
+        MemberCacheProfileDto profile = (MemberCacheProfileDto) redisTemplate.opsForValue().get(profileKey);
+
+        // 캐시에 없으면 DB 조회 후 Redis에 저장
+        if (profile == null) {
+            Member member = memberRepository.findById(memberNo)
+                    .orElseThrow(() -> new RuntimeException("사용자를 찾을 수 없습니다."));
+
+            // 연령대 계산 (한국 나이 기준 예시)
+            long age = LocalDate.now().getYear() - member.getMemberBirthdate().getYear() + 1;
+            Long ageGroup = (age / 10) * 10;
+
+            profile = new MemberCacheProfileDto(ageGroup, member.getMemberGender());
+
+            // 만료시간 설정: 1시간
+            redisTemplate.opsForValue().set(profileKey, profile, Duration.ofHours(memberProfileExpiration));
+        }
+
+        // 해당 연령/성별 조합의 추천 VOD 리스트를 Redis에서 조회
+        // Redis 키 ex: "recommend:age:20:gender:MALE"
+        String key = String.format("recommend:age:%d:gender:%s", profile.getAgeGroup(), profile.getGender());
+        Set<Object> results = redisTemplate.opsForZSet().reverseRange(key, 0, 3);
+
+        List<VodRecommendDto> recommendList = results.stream()
+                .map(obj -> {
+                    // 이미 객체 타입이라면 캐스팅,
+                    // 만약 LinkedHashMap으로 리턴된다면 objectMapper로 컨버팅
+                    if (obj instanceof VodRecommendDto) {
+                        return (VodRecommendDto) obj;
+                    } else {
+                        // GenericJackson2JsonRedisSerializer 등을 쓸 때 가끔 발생
+                        return objectMapper.convertValue(obj, VodRecommendDto.class);
+                    }
+                })
+                .collect(Collectors.toList());
+
+        return recommendList;
+    }
+
 }

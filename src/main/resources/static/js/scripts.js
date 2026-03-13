@@ -121,6 +121,14 @@ async function doLogoutOnce() {
         if (window.Swal) {
             Swal.fire({ icon: 'success', title: '로그아웃', text: '정상적으로 로그아웃되었습니다.' });
         }
+
+        const recommendSection = document.querySelector('.recommend');
+        if (recommendSection) {
+            recommendSection.style.display = 'none';
+            // 기존 데이터도 비워주는 것이 보안상 좋습니다.
+            document.getElementById('recommend-grid').innerHTML = '';
+        }
+
     } catch (e) {
         console.warn('logout failed:', e);
         if (window.Swal) {
