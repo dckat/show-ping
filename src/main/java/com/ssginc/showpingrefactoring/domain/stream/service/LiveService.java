@@ -27,4 +27,6 @@ public interface LiveService {
 
     GetLiveRegisterInfoResponseDto getLiveRegisterInfo(String memberId);
 
+    void incrementCount(String streamNo);
+
 }

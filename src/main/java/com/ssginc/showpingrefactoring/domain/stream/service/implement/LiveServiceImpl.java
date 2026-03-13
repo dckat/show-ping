@@ -21,6 +21,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 
 import java.text.NumberFormat;
@@ -39,6 +40,12 @@ public class LiveServiceImpl implements LiveService {
     private final ProductRepository productRepository;
 
     private final MemberRepository memberRepository;
+
+    private final StringRedisTemplate redisTemplate;
+
+    private static final String COUNT_KEY_PREFIX = "live:count:";
+
+    private static final String STATS_KEY_PREFIX = "stats:";
 
     /**
      * 시청하려는 방송의 상품을 정보를 가져오는 메서드
@@ -254,6 +261,15 @@ public class LiveServiceImpl implements LiveService {
             return null;
         }
 
+    }
+
+    @Override
+    public void incrementCount(String streamNo) {
+        String key = COUNT_KEY_PREFIX + streamNo;
+
+        redisTemplate.opsForValue().increment(key);
+
+        System.out.println("시청수 증가 발생 " + redisTemplate.opsForValue().get(key) + "명");
     }
 
 }

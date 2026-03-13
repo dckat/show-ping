@@ -4,6 +4,8 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonObject;
 import com.ssginc.showpingrefactoring.common.util.UserSession;
+import com.ssginc.showpingrefactoring.domain.stream.service.LiveService;
+import lombok.RequiredArgsConstructor;
 import org.kurento.client.*;
 import org.kurento.jsonrpc.JsonUtils;
 import org.slf4j.Logger;
@@ -33,6 +35,9 @@ public class LiveHandler extends TextWebSocketHandler {
 
     private MediaPipeline pipeline;
     private UserSession presenterUserSession;
+
+    @Autowired
+    private LiveService liveService;
 
     @Override
     public void handleTextMessage(WebSocketSession session, TextMessage message) throws Exception {
@@ -152,20 +157,23 @@ public class LiveHandler extends TextWebSocketHandler {
     private void viewer(final WebSocketSession session, JsonObject jsonMessage)
             throws IOException {
 
+        if (!jsonMessage.has("streamNo")) {
+            sendRejectedViewerResponse(session, "StreamNo is missing in message");
+            return;
+        }
+
+        String streamNo = jsonMessage.get("streamNo").getAsString();
+        session.getAttributes().put("streamNo", streamNo);
+
         UserSession presenter = presenterUserSession;
         if (presenter == null || presenter.getWebRtcEndpoint() == null) {
-            JsonObject response = new JsonObject();
-            response.addProperty("id", "viewerResponse");
-            response.addProperty("response", "rejected");
-            response.addProperty("message",
-                    "No active sender now. Become sender or . Try again later ...");
-            session.sendMessage(new TextMessage(response.toString()));
+            sendRejectedViewerResponse(session, "No active sender now. Become sender or . Try again later ...");
         }
 
         UserSession viewer = new UserSession(session);
 
         if (viewers.putIfAbsent(session.getId(), viewer) != null) {
-            sendRejectedViewerResponse(session);
+            sendRejectedViewerResponse(session, "You are already viewing in this session.");
             return;
         }
 
@@ -209,6 +217,9 @@ public class LiveHandler extends TextWebSocketHandler {
                 viewer.sendMessage(response);
             }
             nextWebRtc.gatherCandidates();
+
+            liveService.incrementCount(streamNo);
+
         } catch (Exception e) {
             log.error("Viewer 연결 중 에러 발생", e);
             stop(session);
@@ -252,12 +263,11 @@ public class LiveHandler extends TextWebSocketHandler {
         session.sendMessage(new TextMessage(response.toString()));
     }
 
-    private void sendRejectedViewerResponse(WebSocketSession session) throws IOException {
+    private void sendRejectedViewerResponse(WebSocketSession session, String message) throws IOException {
         JsonObject response = new JsonObject();
         response.addProperty("id", "viewerResponse");
         response.addProperty("response", "rejected");
-        response.addProperty("message", "You are already viewing in this session. "
-                + "Use a different browser to add additional viewers.");
+        response.addProperty("message", message);
         session.sendMessage(new TextMessage(response.toString()));
     }
 
