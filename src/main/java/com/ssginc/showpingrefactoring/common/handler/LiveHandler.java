@@ -93,11 +93,22 @@ public class LiveHandler extends TextWebSocketHandler {
         session.sendMessage(new TextMessage(response.toString()));
     }
 
-    private synchronized void presenter(final WebSocketSession session, JsonObject jsonMessage)
+    private void presenter(final WebSocketSession session, JsonObject jsonMessage)
             throws IOException {
-        if (presenterUserSession == null) {
-            presenterUserSession = new UserSession(session);
 
+        if (presenterUserSession != null) {
+            sendRejectedPresenterResponse(session);
+        }
+
+        synchronized (this) {
+            if (presenterUserSession != null) {
+                sendRejectedPresenterResponse(session);
+            }
+
+            presenterUserSession = new UserSession(session);
+        }
+
+        try {
             pipeline = kurento.createMediaPipeline();
             presenterUserSession.setWebRtcEndpoint(new WebRtcEndpoint.Builder(pipeline).build());
 
@@ -132,39 +143,33 @@ public class LiveHandler extends TextWebSocketHandler {
                 presenterUserSession.sendMessage(response);
             }
             presenterWebRtc.gatherCandidates();
-
-        } else {
-            JsonObject response = new JsonObject();
-            response.addProperty("id", "presenterResponse");
-            response.addProperty("response", "rejected");
-            response.addProperty("message",
-                    "Another user is currently acting as sender. Try again later ...");
-            session.sendMessage(new TextMessage(response.toString()));
+        } catch (Exception e) {
+            log.error("Presenter 설정 실패", e);
+            stop(session);
         }
     }
 
-    private synchronized void viewer(final WebSocketSession session, JsonObject jsonMessage)
+    private void viewer(final WebSocketSession session, JsonObject jsonMessage)
             throws IOException {
-        if (presenterUserSession == null || presenterUserSession.getWebRtcEndpoint() == null) {
+
+        UserSession presenter = presenterUserSession;
+        if (presenter == null || presenter.getWebRtcEndpoint() == null) {
             JsonObject response = new JsonObject();
             response.addProperty("id", "viewerResponse");
             response.addProperty("response", "rejected");
             response.addProperty("message",
                     "No active sender now. Become sender or . Try again later ...");
             session.sendMessage(new TextMessage(response.toString()));
-        } else {
-            if (viewers.containsKey(session.getId())) {
-                JsonObject response = new JsonObject();
-                response.addProperty("id", "viewerResponse");
-                response.addProperty("response", "rejected");
-                response.addProperty("message", "You are already viewing in this session. "
-                        + "Use a different browser to add additional viewers.");
-                session.sendMessage(new TextMessage(response.toString()));
-                return;
-            }
-            UserSession viewer = new UserSession(session);
-            viewers.put(session.getId(), viewer);
+        }
 
+        UserSession viewer = new UserSession(session);
+
+        if (viewers.putIfAbsent(session.getId(), viewer) != null) {
+            sendRejectedViewerResponse(session);
+            return;
+        }
+
+        try {
             WebRtcEndpoint nextWebRtc = new WebRtcEndpoint.Builder(pipeline).build();
 
             nextWebRtc.addIceCandidateFoundListener(new EventListener<IceCandidateFoundEvent>() {
@@ -185,7 +190,13 @@ public class LiveHandler extends TextWebSocketHandler {
             });
 
             viewer.setWebRtcEndpoint(nextWebRtc);
-            presenterUserSession.getWebRtcEndpoint().connect(nextWebRtc);
+
+            WebRtcEndpoint presenterWebRtc = presenter.getWebRtcEndpoint();
+            if (presenterWebRtc == null) {
+                throw new RuntimeException("Presenter endpoint disappeared.");
+            }
+            presenterWebRtc.connect(nextWebRtc);
+
             String sdpOffer = jsonMessage.getAsJsonPrimitive("sdpOffer").getAsString();
             String sdpAnswer = nextWebRtc.processOffer(sdpOffer);
 
@@ -198,6 +209,9 @@ public class LiveHandler extends TextWebSocketHandler {
                 viewer.sendMessage(response);
             }
             nextWebRtc.gatherCandidates();
+        } catch (Exception e) {
+            log.error("Viewer 연결 중 에러 발생", e);
+            stop(session);
         }
     }
 
@@ -228,4 +242,24 @@ public class LiveHandler extends TextWebSocketHandler {
     public void afterConnectionClosed(WebSocketSession session, CloseStatus status) throws Exception {
         stop(session);
     }
+
+    private void sendRejectedPresenterResponse(WebSocketSession session) throws IOException {
+        JsonObject response = new JsonObject();
+        response.addProperty("id", "presenterResponse");
+        response.addProperty("response", "rejected");
+        response.addProperty("message",
+                "Another user is currently acting as sender. Try again later ...");
+        session.sendMessage(new TextMessage(response.toString()));
+    }
+
+    private void sendRejectedViewerResponse(WebSocketSession session) throws IOException {
+        JsonObject response = new JsonObject();
+        response.addProperty("id", "viewerResponse");
+        response.addProperty("response", "rejected");
+        response.addProperty("message", "You are already viewing in this session. "
+                + "Use a different browser to add additional viewers.");
+        session.sendMessage(new TextMessage(response.toString()));
+    }
+
 }
+
