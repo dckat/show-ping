@@ -263,6 +263,9 @@ ws.onmessage = function(message) {
                     return console.error('Error adding candidate: ' + error);
             });
             break;
+        case 'viewerCountUpdate':
+            updateViewerCount(parsedMessage.count);
+            break;
         case 'stopCommunication':
             dispose();
             break;
@@ -330,6 +333,22 @@ function viewerResponse(message) {
         });
     }
     connectToChatRoom();
+}
+
+function updateViewerCount(count) {
+    const countElement = document.getElementById('viewer-count');
+    if (!countElement) return;
+
+    let displayCount;
+    if (count >= 1000000) {
+        displayCount = (count / 1000000).toFixed(1) + 'M'; // 1.1M
+    } else if (count >= 1000) {
+        displayCount = (count / 1000).toFixed(1) + 'K'; // 1.2K
+    } else {
+        displayCount = count; // 999 이하일 땐 숫자 그대로
+    }
+
+    countElement.textContent = displayCount;
 }
 
 async function startLive() {
@@ -432,8 +451,13 @@ function onLiveOffer(error, offerSdp) {
 function onViewOffer(error, offerSdp) {
     if (error)
         return console.error('Error generating the offer');
+
+    const pathSegments = window.location.pathname.split('/');
+    const streamNo = pathSegments[pathSegments.length - 1];
+
     var message = {
         id : 'viewer',
+        streamNo: streamNo,
         sdpOffer : offerSdp
     }
     sendLiveMessage(message);

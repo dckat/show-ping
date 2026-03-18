@@ -8,7 +8,7 @@
     <link rel="stylesheet" th:href="@{/webjars/ekko-lightbox/5.2.0/dist/ekko-lightbox.css}">
     <link rel="shortcut icon" th:href="@{/img/kurento.png}" type="image/png"/>
     <link rel="stylesheet" th:href="@{https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css}">
-    
+    <link rel="stylesheet" th:href="@{https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css}">
     
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script th:src="@{/webjars/jquery/3.7.1/dist/jquery.js}"></script>
@@ -35,6 +35,12 @@
                 <div class="video">
                     <video id="live" autoplay playsinline>
                     </video>
+
+                    <div class="viewer-badge">
+                        <i class="fa-regular fa-user"></i>
+                        <span id="viewer-count">0</span>
+                    </div>
+
                 </div>
             </div>
             <div class="chat-container">

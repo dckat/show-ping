@@ -34,6 +34,51 @@
     padding-top: 15px;
 }
 
+.live-container {
+    position: relative; /* 자식 요소인 badge의 기준점이 됨 */
+    width: 100%;
+    max-width: 300px; /* 원하는 너비 설정 */
+    max-height: 480px;
+    aspect-ratio: 9 / 16; /* 세로형 라이브일 경우 */
+    background-color: #000;
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+/* 시청자 수 배지 스타일 */
+.viewer-badge {
+    position: absolute; /* 컨테이너 내부에서 자유롭게 배치 */
+    top: 20px;         /* 상단에서 20px 띄움 */
+    left: 20px;        /* 왼쪽에서 20px 띄움 */
+
+    display: flex;
+    align-items: center;
+    gap: 8px;
+
+    padding: 6px 12px;
+    background-color: rgba(0, 0, 0, 0.6); /* 반투명 검정 */
+    color: white;
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: 500;
+    z-index: 10; /* 영상보다 위에 보이도록 */
+}
+
+@keyframes blink {
+    0% { opacity: 1; }
+    50% { opacity: 0.3; }
+    100% { opacity: 1; }
+}
+
+.live-text {
+    color: #ff4d4d;
+    font-weight: bold;
+}
+
+.divider {
+    color: rgba(255, 255, 255, 0.3);
+}
+
 .vod-container {
     width: 300px;
 }
