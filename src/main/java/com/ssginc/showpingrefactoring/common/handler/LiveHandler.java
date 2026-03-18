@@ -5,6 +5,7 @@ import com.google.gson.GsonBuilder;
 import com.google.gson.JsonObject;
 import com.ssginc.showpingrefactoring.common.util.UserSession;
 import com.ssginc.showpingrefactoring.domain.stream.service.LiveService;
+import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import org.kurento.client.*;
 import org.kurento.jsonrpc.JsonUtils;
@@ -28,6 +29,7 @@ public class LiveHandler extends TextWebSocketHandler {
     private static final Logger log = LoggerFactory.getLogger(LiveHandler.class);
     private static final Gson gson = new GsonBuilder().create();
 
+    @Getter
     private final ConcurrentHashMap<String, UserSession> viewers = new ConcurrentHashMap<>();
 
     @Autowired
@@ -38,6 +40,7 @@ public class LiveHandler extends TextWebSocketHandler {
 
     @Autowired
     private LiveService liveService;
+
 
     @Override
     public void handleTextMessage(WebSocketSession session, TextMessage message) throws Exception {
