@@ -30,4 +30,7 @@ public interface LiveService {
     void incrementCount(String streamNo);
 
     void decrementCount(String streamNo);
+
+    void saveSnapshot(String streamNo, int viewerCount);
+
 }

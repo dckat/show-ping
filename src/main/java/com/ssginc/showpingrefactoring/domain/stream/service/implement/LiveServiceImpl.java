@@ -25,6 +25,7 @@ import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 
 import java.text.NumberFormat;
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.List;
@@ -43,9 +44,7 @@ public class LiveServiceImpl implements LiveService {
 
     private final StringRedisTemplate redisTemplate;
 
-    private static final String COUNT_KEY_PREFIX = "live:count:";
-
-    private static final String STATS_KEY_PREFIX = "stats:";
+    private static final String COUNT_KEY_PREFIX = "live:streamNo:";
 
     /**
      * 시청하려는 방송의 상품을 정보를 가져오는 메서드
@@ -265,14 +264,25 @@ public class LiveServiceImpl implements LiveService {
 
     @Override
     public void incrementCount(String streamNo) {
-        String key = COUNT_KEY_PREFIX + streamNo;
+        String key = COUNT_KEY_PREFIX + streamNo + ":count:";
         redisTemplate.opsForValue().increment(key);
     }
 
     @Override
     public void decrementCount(String streamNo) {
-        String key = COUNT_KEY_PREFIX + streamNo;
+        String key = COUNT_KEY_PREFIX + streamNo + ":count:";
         redisTemplate.opsForValue().decrement(key);
+    }
+
+    @Override
+    public void saveSnapshot(String streamNo, int viewerCount) {
+        long timestamp = System.currentTimeMillis() / 1000;
+        String key = "stats:" + streamNo;
+        String data = timestamp + ":" + viewerCount;
+
+        redisTemplate.opsForZSet().add(key, data, (double) timestamp);
+
+        redisTemplate.expire(key, Duration.ofHours(24));
     }
 
 }
