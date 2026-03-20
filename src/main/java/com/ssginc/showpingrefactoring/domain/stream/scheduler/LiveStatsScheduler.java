@@ -52,6 +52,7 @@ public class LiveStatsScheduler {
     }
 
     private void broadcastViewCountByStream(Long streamNo) {
+        UserSession currentPresenter = liveHandler.getPresenterUserSession();
         ConcurrentHashMap<String, UserSession> currentViewers = liveHandler.getViewers();
 
         // 해당 streamNo를 보고 있는 유저 필터링 (Long 비교)
@@ -71,22 +72,33 @@ public class LiveStatsScheduler {
         countMessage.addProperty("count", count);
 
         // 메시지 전송
+        if (isSameStream(currentPresenter, streamNo)) {
+            sendMessageSafe(currentPresenter, countMessage, streamNo);
+        }
+
         currentViewers.values().stream()
-                .filter(user -> {
-                    Object attr = user.getSession().getAttributes().get("streamNo");
-                    return attr != null && streamNo.equals(Long.valueOf(attr.toString()));
-                })
-                .forEach(user -> {
-                    try {
-                        synchronized (user.getSession()) {
-                            if (user.getSession().isOpen()) {
-                                user.sendMessage(countMessage);
-                            }
-                        }
-                    } catch (IOException e) {
-                        log.error("전송 에러 [streamNo: {}]: {}", streamNo, e.getMessage());
-                    }
-                });
+                .filter(user -> isSameStream(user, streamNo))
+                .forEach(user -> sendMessageSafe(user, countMessage, streamNo));
+
+    }
+
+    private boolean isSameStream(UserSession user, Long streamNo) {
+        if (user == null || user.getSession() == null) return false;
+        Object attr = user.getSession().getAttributes().get("streamNo");
+        return attr != null && streamNo.equals(Long.valueOf(attr.toString()));
+    }
+
+    private void sendMessageSafe(UserSession user, JsonObject message, Long streamNo) {
+        try {
+            synchronized (user.getSession()) {
+                if (user.getSession().isOpen()) {
+                    user.sendMessage(message);
+                }
+            }
+        } catch (IOException e) {
+            log.error("메시지 전송 실패 [streamNo: {}, sessionId: {}]: {}",
+                    streamNo, user.getSession().getId(), e.getMessage());
+        }
     }
 
 }
