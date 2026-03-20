@@ -8,6 +8,7 @@ import com.ssginc.showpingrefactoring.domain.stream.dto.request.LiveRequestDto;
 import com.ssginc.showpingrefactoring.domain.stream.dto.response.GetLiveRegisterInfoResponseDto;
 import com.ssginc.showpingrefactoring.domain.stream.dto.response.StartLiveResponseDto;
 import com.ssginc.showpingrefactoring.domain.stream.dto.response.StreamResponseDto;
+import com.ssginc.showpingrefactoring.domain.stream.scheduler.LiveStatsScheduler;
 import com.ssginc.showpingrefactoring.domain.stream.service.LiveService;
 import com.ssginc.showpingrefactoring.domain.stream.swagger.LiveApiSpecification;
 import lombok.RequiredArgsConstructor;
@@ -31,6 +32,8 @@ public class LiveApiController implements LiveApiSpecification {
     private final LiveService liveService;
 
     private final ProductService productService;
+
+    private final LiveStatsScheduler liveStatsScheduler;
 
     /**
      * 라이브 방송을 반환해주는 컨트롤러 메서드
@@ -150,6 +153,8 @@ public class LiveApiController implements LiveApiSpecification {
     public ResponseEntity<StartLiveResponseDto> startLive(@RequestBody LiveRequestDto request) {
         StartLiveResponseDto response = liveService.startLive(request.getStreamNo());
 
+        liveStatsScheduler.startViewCountScheduler(request.getStreamNo());
+
         return ResponseEntity.status(HttpStatus.OK).body(response);
     }
 
@@ -162,6 +167,8 @@ public class LiveApiController implements LiveApiSpecification {
     @Override
     public ResponseEntity<Map<String, Boolean>> stopLive(@RequestBody LiveRequestDto request) {
         Boolean result = liveService.stopLive(request.getStreamNo());
+
+        liveStatsScheduler.stopViewCountScheduler(request.getStreamNo());
 
         Map<String, Boolean> response = new HashMap<>();
         response.put("result", result);
