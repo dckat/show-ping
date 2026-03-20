@@ -187,4 +187,12 @@ public class LiveApiController implements LiveApiSpecification {
         return ResponseEntity.status(HttpStatus.OK).body(response);
     }
 
+
+    @GetMapping("/viewCount/{streamNo}")
+    public ResponseEntity<?> getViewCount(@PathVariable Long streamNo) {
+        Long viewCount = liveService.getViewCount(streamNo);
+
+        return ResponseEntity.status(HttpStatus.OK).body(viewCount);
+    }
+
 }

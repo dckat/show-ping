@@ -33,4 +33,6 @@ public interface LiveService {
 
     void saveSnapshot(String streamNo, int viewerCount);
 
+    Long getViewCount(Long streamNo);
+
 }
