@@ -31,11 +31,14 @@ public class LiveHandler extends TextWebSocketHandler {
     @Getter
     private final ConcurrentHashMap<String, UserSession> viewers = new ConcurrentHashMap<>();
 
+    @Getter
+    private UserSession presenterUserSession;
+
     @Autowired
     private KurentoClient kurento;
 
     private MediaPipeline pipeline;
-    private UserSession presenterUserSession;
+
 
     @Autowired
     private LiveService liveService;
@@ -106,6 +109,14 @@ public class LiveHandler extends TextWebSocketHandler {
         if (presenterUserSession != null) {
             sendRejectedPresenterResponse(session);
         }
+
+        if (!jsonMessage.has("streamNo")) {
+            sendRejectedPresenterResponse(session);
+            return;
+        }
+
+        String streamNo = jsonMessage.get("streamNo").getAsString();
+        session.getAttributes().put("streamNo", streamNo);
 
         synchronized (this) {
             if (presenterUserSession != null) {
