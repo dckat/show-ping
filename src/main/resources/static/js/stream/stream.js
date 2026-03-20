@@ -11,6 +11,7 @@ let stompClient = null;
 let memberId = null;
 let memberRole = null;
 let reconnectTimeout = 5000;
+let viewerCount = null;
 
 const NO_CALL = 0;
 const IN_CALL = 1;
@@ -38,6 +39,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
         }
 
+        initViewerCount();
         getMemberInfo();
 
         // send 버튼 이벤트와 STOMP 연결 초기화
@@ -335,6 +337,12 @@ function viewerResponse(message) {
     connectToChatRoom();
 }
 
+function initViewerCount() {
+    const countElement = document.getElementById('viewer-count');
+
+    viewerCount = countElement.textContent;
+}
+
 function updateViewerCount(count) {
     const countElement = document.getElementById('viewer-count');
     if (!countElement) return;
@@ -349,6 +357,7 @@ function updateViewerCount(count) {
     }
 
     countElement.textContent = displayCount;
+    viewerCount = displayCount;
 }
 
 async function startLive() {
