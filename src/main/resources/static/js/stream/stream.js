@@ -338,9 +338,11 @@ function viewerResponse(message) {
 }
 
 function initViewerCount() {
-    const countElement = document.getElementById('viewer-count');
-
-    viewerCount = countElement.textContent;
+    axios.get(`/api/live/viewCount/${streamNo}`)
+        .then(response => {
+            updateViewerCount(response.data);
+            }
+        )
 }
 
 function updateViewerCount(count) {
