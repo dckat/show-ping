@@ -31,7 +31,7 @@ public interface LiveService {
 
     void decrementCount(String streamNo);
 
-    void saveSnapshot(String streamNo, int viewerCount);
+    void saveSnapshot(Long streamNo, int viewerCount);
 
     Long getViewCount(Long streamNo);
 

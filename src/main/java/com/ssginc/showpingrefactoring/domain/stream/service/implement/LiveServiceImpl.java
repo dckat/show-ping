@@ -278,7 +278,7 @@ public class LiveServiceImpl implements LiveService {
     }
 
     @Override
-    public void saveSnapshot(String streamNo, int viewerCount) {
+    public void saveSnapshot(Long streamNo, int viewerCount) {
         long timestamp = System.currentTimeMillis() / 1000;
         String key = "stats:" + streamNo;
         String data = timestamp + ":" + viewerCount;
