@@ -6,7 +6,6 @@ import com.google.gson.JsonObject;
 import com.ssginc.showpingrefactoring.common.util.UserSession;
 import com.ssginc.showpingrefactoring.domain.stream.service.LiveService;
 import lombok.Getter;
-import lombok.RequiredArgsConstructor;
 import org.kurento.client.*;
 import org.kurento.jsonrpc.JsonUtils;
 import org.slf4j.Logger;
