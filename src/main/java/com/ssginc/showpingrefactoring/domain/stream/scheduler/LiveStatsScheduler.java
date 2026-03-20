@@ -73,12 +73,12 @@ public class LiveStatsScheduler {
 
         // 메시지 전송
         if (isSameStream(currentPresenter, streamNo)) {
-            sendMessageSafe(currentPresenter, countMessage, streamNo);
+            sendMessage(currentPresenter, countMessage, streamNo);
         }
 
         currentViewers.values().stream()
                 .filter(user -> isSameStream(user, streamNo))
-                .forEach(user -> sendMessageSafe(user, countMessage, streamNo));
+                .forEach(user -> sendMessage(user, countMessage, streamNo));
 
     }
 
@@ -88,7 +88,7 @@ public class LiveStatsScheduler {
         return attr != null && streamNo.equals(Long.valueOf(attr.toString()));
     }
 
-    private void sendMessageSafe(UserSession user, JsonObject message, Long streamNo) {
+    private void sendMessage(UserSession user, JsonObject message, Long streamNo) {
         try {
             synchronized (user.getSession()) {
                 if (user.getSession().isOpen()) {
