@@ -11,6 +11,7 @@ let stompClient = null;
 let memberId = null;
 let memberRole = null;
 let reconnectTimeout = 5000;
+let viewerCount = null;
 
 const NO_CALL = 0;
 const IN_CALL = 1;
@@ -22,6 +23,10 @@ document.addEventListener('DOMContentLoaded', function () {
     window.addEventListener('dataLoaded', function () {
         live = document.getElementById('live-video');
         watch = document.getElementById('live');
+
+        if (watch) {
+            initViewerCount();
+        }
 
         if (live) {
             getMemberInfo(); // 여기서 memberRole을 설정함
@@ -37,7 +42,6 @@ document.addEventListener('DOMContentLoaded', function () {
             }, 100);
 
         }
-
         getMemberInfo();
 
         // send 버튼 이벤트와 STOMP 연결 초기화
@@ -303,7 +307,6 @@ rec.onmessage = function(message) {
 
 function presenterResponse(message) {
     setState(IN_CALL);
-    console.log('SDP answer received from server. Processing ...');
 
     webRtcPeer.processAnswer(message.sdpAnswer, function(error) {
         if (error) {
@@ -314,7 +317,6 @@ function presenterResponse(message) {
 }
 
 function startResponse(message) {
-    console.log('SDP answer received from server. Processing ...');
     webRtcRecord.processAnswer(message.sdpAnswer, function(error) {
         if (error)
             return console.error(error);
@@ -335,7 +337,17 @@ function viewerResponse(message) {
     connectToChatRoom();
 }
 
+function initViewerCount() {
+    axios.get(`/api/live/viewCount/${streamNo}`)
+        .then(response => {
+            updateViewerCount(response.data);
+            }
+        )
+}
+
 function updateViewerCount(count) {
+    console.log("시청자 수 집계 업데이트");
+
     const countElement = document.getElementById('viewer-count');
     if (!countElement) return;
 
@@ -349,6 +361,7 @@ function updateViewerCount(count) {
     }
 
     countElement.textContent = displayCount;
+    viewerCount = displayCount;
 }
 
 async function startLive() {
@@ -405,8 +418,6 @@ function viewer() {
 }
 
 function onLiveIceCandidate(candidate) {
-    console.log("Local candidate" + JSON.stringify(candidate));
-
     let message = {
         id : 'onIceCandidate',
         candidate : candidate
@@ -415,7 +426,6 @@ function onLiveIceCandidate(candidate) {
 }
 
 function createVideo() {
-
     let options = {
         localVideo : live,
         mediaConstraints : getConstraints(),
@@ -443,6 +453,7 @@ function onLiveOffer(error, offerSdp) {
         return console.error('Error generating the offer');
     let message = {
         id : 'presenter',
+        streamNo: streamNo,
         sdpOffer : offerSdp
     }
     sendLiveMessage(message);
@@ -451,9 +462,6 @@ function onLiveOffer(error, offerSdp) {
 function onViewOffer(error, offerSdp) {
     if (error)
         return console.error('Error generating the offer');
-
-    const pathSegments = window.location.pathname.split('/');
-    const streamNo = pathSegments[pathSegments.length - 1];
 
     var message = {
         id : 'viewer',
@@ -468,7 +476,7 @@ function onRecordOffer(error, offerSdp) {
 
     if (error)
         return console.error('Error generating the offer');
-    console.info('Invoking SDP offer callback function ' + location.host);
+
     let message = {
         id : 'start',
         title: title,

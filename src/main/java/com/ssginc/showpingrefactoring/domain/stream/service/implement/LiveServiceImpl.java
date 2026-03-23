@@ -275,7 +275,7 @@ public class LiveServiceImpl implements LiveService {
     }
 
     @Override
-    public void saveSnapshot(String streamNo, int viewerCount) {
+    public void saveSnapshot(Long streamNo, int viewerCount) {
         long timestamp = System.currentTimeMillis() / 1000;
         String key = "stats:" + streamNo;
         String data = timestamp + ":" + viewerCount;
@@ -283,6 +283,14 @@ public class LiveServiceImpl implements LiveService {
         redisTemplate.opsForZSet().add(key, data, (double) timestamp);
 
         redisTemplate.expire(key, Duration.ofHours(24));
+    }
+
+    @Override
+    public Long getViewCount(Long streamNo) {
+        String key = COUNT_KEY_PREFIX + streamNo + ":count:";
+        String value = redisTemplate.opsForValue().get(key);
+
+        return value == null ? null : Long.parseLong(value);
     }
 
 }
