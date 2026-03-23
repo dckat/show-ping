@@ -9,7 +9,7 @@ import java.util.Map;
 @Getter
 @Setter
 @Builder
-public class StreamInfoDto {
+public class LiveStreamLogInfo {
 
     private Long streamNo;
     private String streamTitle;
