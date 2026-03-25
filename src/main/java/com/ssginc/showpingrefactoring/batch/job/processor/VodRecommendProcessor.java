@@ -1,4 +1,4 @@
-package com.ssginc.showpingrefactoring.batch.job;
+package com.ssginc.showpingrefactoring.batch.job.processor;
 
 import com.ssginc.showpingrefactoring.domain.stream.dto.object.VodRecommendDto;
 import org.springframework.batch.item.ItemProcessor;
