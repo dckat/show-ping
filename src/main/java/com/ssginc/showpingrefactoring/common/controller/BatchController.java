@@ -17,10 +17,7 @@ import org.springframework.batch.core.JobParameters;
 import org.springframework.batch.core.JobParametersBuilder;
 import org.springframework.batch.core.launch.JobLauncher;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 /**
  * @author dckat
@@ -35,6 +32,7 @@ public class BatchController implements BatchSpecification {
     private final JobLauncher jobLauncher;
     private final Job createHlsJob;
     private final Job createSubtitleJob;
+    private final Job createClipJob;
 
     /**
      * HLS 저장 작업을 실행하는 컨트롤러 메서드
@@ -72,6 +70,25 @@ public class BatchController implements BatchSpecification {
         JobExecution exec = jobLauncher.run(createSubtitleJob, params);
         return ResponseEntity.accepted()
                 .body("createSubtitleJob 실행 ID=" + exec.getId());
+    }
+
+    @Override
+    @PostMapping("/clip/create/{streamNo}")
+    public ResponseEntity<String> createClip(
+            @PathVariable Long streamNo,
+            @RequestBody VodTitleRequestDto vodTitleRequestDto) throws Exception {
+        String title = vodTitleRequestDto.getFileTitle();
+
+        JobParameters params = new JobParametersBuilder()
+                .addLong("streamNo", streamNo)
+                .addString("streamTitle", title)
+                .addLong("time", System.currentTimeMillis())
+                .toJobParameters();
+
+        JobExecution exec = jobLauncher.run(createClipJob, params);
+        return ResponseEntity.accepted()
+                .body("createClipJob 실행 ID=" + exec.getId());
+
     }
 
 }
