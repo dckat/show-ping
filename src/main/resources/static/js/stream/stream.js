@@ -595,6 +595,7 @@ async function uploadFileToNCP() {
         Promise.all([
             window.csrfPost('/api/batch/hls/create',     { fileTitle: title }),
             window.csrfPost('/api/batch/subtitle/create',{ fileTitle: title }),
+            window.csrfPost(`/api/batch/clip/create/${streamNo}`, {fileTitle: title})
         ]).catch(err => console.error('후속 작업 실패:', err));
 
         console.log('업로드 정상적으로 실행 중...');
