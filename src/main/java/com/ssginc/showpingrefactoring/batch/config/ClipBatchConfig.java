@@ -14,10 +14,10 @@ import org.springframework.batch.core.job.builder.JobBuilder;
 import org.springframework.batch.core.launch.support.RunIdIncrementer;
 import org.springframework.batch.core.repository.JobRepository;
 import org.springframework.batch.core.step.builder.StepBuilder;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.retry.support.RetryTemplate;
+import org.springframework.retry.backoff.FixedBackOffPolicy;
+import org.springframework.transaction.PlatformTransactionManager;
 
 import java.util.List;
 
@@ -26,30 +26,36 @@ import java.util.List;
 @RequiredArgsConstructor
 public class ClipBatchConfig {
 
+    private final FixedBackOffPolicy customBackOffPolicy;
     private final JobFailureListener jobFailureListener;
+    private final PlatformTransactionManager tx;
+
+    private final JobRepository jobRepository;
 
     private final ClipDataReader clipDataReader;
     private final ClipProcessor clipProcessor;
     private final ClipWriter clipWriter;
 
-    @Bean(name = "createClipJob")
-    public Job createClipJob(JobRepository jobRepository, Step createClipStep) {
+    @Bean
+    public Job createClipJob() {
         return new JobBuilder("createClipJob", jobRepository)
                 .incrementer(new RunIdIncrementer())
-                .start(createClipStep)
+                .start(createClipStep())
                 .listener(jobFailureListener)
                 .build();
     }
 
     @Bean
-    public Step createClipStep(JobRepository jobRepository,
-                               @Qualifier("CustomRetryTemplate") RetryTemplate retryTemplate) {
-
+    public Step createClipStep() {
         return new StepBuilder("createClipStep", jobRepository)
-                .<LiveStreamLogInfo, List<ClipSegment>>chunk(1)
+                .<LiveStreamLogInfo, List<ClipSegment>>chunk(1, tx)
                 .reader(clipDataReader)
                 .processor(clipProcessor)
                 .writer(clipWriter)
+                .faultTolerant()
+                .retryLimit(3)
+                .retry(Exception.class)
+                .backOffPolicy(customBackOffPolicy)
                 .build();
     }
 
