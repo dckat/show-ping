@@ -2,14 +2,6 @@ package com.ssginc.showpingrefactoring.common.controller;
 
 import com.ssginc.showpingrefactoring.common.swagger.BatchSpecification;
 import com.ssginc.showpingrefactoring.domain.stream.dto.request.VodTitleRequestDto;
-import com.ssginc.showpingrefactoring.domain.watch.dto.response.WatchResponseDto;
-import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.media.ArraySchema;
-import io.swagger.v3.oas.annotations.media.Content;
-import io.swagger.v3.oas.annotations.media.Schema;
-import io.swagger.v3.oas.annotations.responses.ApiResponse;
-import io.swagger.v3.oas.annotations.responses.ApiResponses;
-import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.batch.core.Job;
 import org.springframework.batch.core.JobExecution;
