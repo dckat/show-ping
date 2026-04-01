@@ -5,6 +5,7 @@ import com.ssginc.showpingrefactoring.common.exception.ErrorCode;
 import com.ssginc.showpingrefactoring.infrastructure.NCP.storage.StorageLoader;
 import com.ssginc.showpingrefactoring.domain.stream.service.HlsService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.Resource;
@@ -29,6 +30,7 @@ import java.util.stream.Stream;
  */
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class HlsServiceImpl implements HlsService {
 
     @Value("${download.path}")
@@ -230,6 +232,31 @@ public class HlsServiceImpl implements HlsService {
     public Resource getTsSegmentV2(String title, String segment) {
         String fileName = title + segment + ".ts";
         return storageLoader.getHLS(fileName);
+    }
+
+    @Override
+    public Long getStreamDuration(String streamTitle) {
+        String streamPath = VIDEO_PATH + streamTitle + ".mp4";
+
+        try {
+            // ffprobe 명령어: -v error(에러만 출력), -show_entries format=duration(길이 정보 추출)
+            ProcessBuilder pb = new ProcessBuilder(
+                    "ffprobe", "-v", "error", "-show_entries", "format=duration",
+                    "-of", "default=noprint_wrappers=1:nokey=1", streamPath
+            );
+
+            Process process = pb.start();
+            BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
+            String line = reader.readLine();
+
+            if (line != null) {
+                // 반환값이 "120.500000" 형태이므로 double로 파싱 후 long으로 변환
+                return (long) Double.parseDouble(line);
+            }
+        } catch (Exception e) {
+            log.error("영상 길이를 가져오는 중 오류 발생: {}", streamPath, e);
+        }
+        return 0L; // 실패 시 0 반환
     }
 
 }

@@ -2,14 +2,6 @@ package com.ssginc.showpingrefactoring.common.controller;
 
 import com.ssginc.showpingrefactoring.common.swagger.BatchSpecification;
 import com.ssginc.showpingrefactoring.domain.stream.dto.request.VodTitleRequestDto;
-import com.ssginc.showpingrefactoring.domain.watch.dto.response.WatchResponseDto;
-import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.media.ArraySchema;
-import io.swagger.v3.oas.annotations.media.Content;
-import io.swagger.v3.oas.annotations.media.Schema;
-import io.swagger.v3.oas.annotations.responses.ApiResponse;
-import io.swagger.v3.oas.annotations.responses.ApiResponses;
-import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.batch.core.Job;
 import org.springframework.batch.core.JobExecution;
@@ -17,10 +9,7 @@ import org.springframework.batch.core.JobParameters;
 import org.springframework.batch.core.JobParametersBuilder;
 import org.springframework.batch.core.launch.JobLauncher;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 /**
  * @author dckat
@@ -35,6 +24,7 @@ public class BatchController implements BatchSpecification {
     private final JobLauncher jobLauncher;
     private final Job createHlsJob;
     private final Job createSubtitleJob;
+    private final Job createClipJob;
 
     /**
      * HLS 저장 작업을 실행하는 컨트롤러 메서드
@@ -72,6 +62,25 @@ public class BatchController implements BatchSpecification {
         JobExecution exec = jobLauncher.run(createSubtitleJob, params);
         return ResponseEntity.accepted()
                 .body("createSubtitleJob 실행 ID=" + exec.getId());
+    }
+
+    @Override
+    @PostMapping("/clip/create/{streamNo}")
+    public ResponseEntity<String> createClip(
+            @PathVariable Long streamNo,
+            @RequestBody VodTitleRequestDto vodTitleRequestDto) throws Exception {
+        String title = vodTitleRequestDto.getFileTitle();
+
+        JobParameters params = new JobParametersBuilder()
+                .addLong("streamNo", streamNo)
+                .addString("streamTitle", title)
+                .addLong("time", System.currentTimeMillis())
+                .toJobParameters();
+
+        JobExecution exec = jobLauncher.run(createClipJob, params);
+        return ResponseEntity.accepted()
+                .body("createClipJob 실행 ID=" + exec.getId());
+
     }
 
 }

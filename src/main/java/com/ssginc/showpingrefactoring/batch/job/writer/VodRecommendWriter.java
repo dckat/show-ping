@@ -1,7 +1,6 @@
-package com.ssginc.showpingrefactoring.batch.job;
+package com.ssginc.showpingrefactoring.batch.job.writer;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ssginc.showpingrefactoring.domain.stream.dto.object.VodRecommendDto;
 import lombok.RequiredArgsConstructor;
 import org.springframework.batch.item.Chunk;
