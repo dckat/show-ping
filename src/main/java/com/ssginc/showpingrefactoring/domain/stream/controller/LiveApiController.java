@@ -2,12 +2,12 @@ package com.ssginc.showpingrefactoring.domain.stream.controller;
 
 import com.ssginc.showpingrefactoring.domain.product.dto.response.GetProductListResponseDto;
 import com.ssginc.showpingrefactoring.domain.product.service.ProductService;
-import com.ssginc.showpingrefactoring.domain.product.dto.object.ProductItemDto;
 import com.ssginc.showpingrefactoring.domain.stream.dto.request.RegisterLiveRequestDto;
 import com.ssginc.showpingrefactoring.domain.stream.dto.request.LiveRequestDto;
 import com.ssginc.showpingrefactoring.domain.stream.dto.response.GetLiveRegisterInfoResponseDto;
 import com.ssginc.showpingrefactoring.domain.stream.dto.response.StartLiveResponseDto;
 import com.ssginc.showpingrefactoring.domain.stream.dto.response.StreamResponseDto;
+import com.ssginc.showpingrefactoring.domain.stream.scheduler.LiveStatsScheduler;
 import com.ssginc.showpingrefactoring.domain.stream.service.LiveService;
 import com.ssginc.showpingrefactoring.domain.stream.swagger.LiveApiSpecification;
 import lombok.RequiredArgsConstructor;
@@ -31,6 +31,8 @@ public class LiveApiController implements LiveApiSpecification {
     private final LiveService liveService;
 
     private final ProductService productService;
+
+    private final LiveStatsScheduler liveStatsScheduler;
 
     /**
      * 라이브 방송을 반환해주는 컨트롤러 메서드
@@ -150,6 +152,8 @@ public class LiveApiController implements LiveApiSpecification {
     public ResponseEntity<StartLiveResponseDto> startLive(@RequestBody LiveRequestDto request) {
         StartLiveResponseDto response = liveService.startLive(request.getStreamNo());
 
+        liveStatsScheduler.startViewCountScheduler(request.getStreamNo());
+
         return ResponseEntity.status(HttpStatus.OK).body(response);
     }
 
@@ -162,6 +166,8 @@ public class LiveApiController implements LiveApiSpecification {
     @Override
     public ResponseEntity<Map<String, Boolean>> stopLive(@RequestBody LiveRequestDto request) {
         Boolean result = liveService.stopLive(request.getStreamNo());
+
+        liveStatsScheduler.stopViewCountScheduler(request.getStreamNo());
 
         Map<String, Boolean> response = new HashMap<>();
         response.put("result", result);
@@ -185,6 +191,14 @@ public class LiveApiController implements LiveApiSpecification {
         GetLiveRegisterInfoResponseDto response = liveService.getLiveRegisterInfo(memberId);
 
         return ResponseEntity.status(HttpStatus.OK).body(response);
+    }
+
+
+    @GetMapping("/viewCount/{streamNo}")
+    public ResponseEntity<?> getViewCount(@PathVariable Long streamNo) {
+        Long viewCount = liveService.getViewCount(streamNo);
+
+        return ResponseEntity.status(HttpStatus.OK).body(viewCount);
     }
 
 }

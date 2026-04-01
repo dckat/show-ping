@@ -27,4 +27,12 @@ public interface LiveService {
 
     GetLiveRegisterInfoResponseDto getLiveRegisterInfo(String memberId);
 
+    void incrementCount(String streamNo);
+
+    void decrementCount(String streamNo);
+
+    void saveSnapshot(Long streamNo, int viewerCount, Long startTime);
+
+    Long getViewCount(Long streamNo);
+
 }

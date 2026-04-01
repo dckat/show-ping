@@ -1,4 +1,4 @@
-package com.ssginc.showpingrefactoring.batch.job;
+package com.ssginc.showpingrefactoring.batch.job.reader;
 
 import com.ssginc.showpingrefactoring.domain.stream.dto.object.VodRecommendDto;
 import lombok.RequiredArgsConstructor;

@@ -21,4 +21,6 @@ public interface HlsService {
 
     Resource getTsSegmentV2(String title, String segment);
 
+    Long getStreamDuration(String streamTitle);
+
 }

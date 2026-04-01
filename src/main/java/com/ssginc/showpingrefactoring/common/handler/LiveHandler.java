@@ -4,6 +4,8 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonObject;
 import com.ssginc.showpingrefactoring.common.util.UserSession;
+import com.ssginc.showpingrefactoring.domain.stream.service.LiveService;
+import lombok.Getter;
 import org.kurento.client.*;
 import org.kurento.jsonrpc.JsonUtils;
 import org.slf4j.Logger;
@@ -26,13 +28,21 @@ public class LiveHandler extends TextWebSocketHandler {
     private static final Logger log = LoggerFactory.getLogger(LiveHandler.class);
     private static final Gson gson = new GsonBuilder().create();
 
+    @Getter
     private final ConcurrentHashMap<String, UserSession> viewers = new ConcurrentHashMap<>();
+
+    @Getter
+    private UserSession presenterUserSession;
 
     @Autowired
     private KurentoClient kurento;
 
     private MediaPipeline pipeline;
-    private UserSession presenterUserSession;
+
+
+    @Autowired
+    private LiveService liveService;
+
 
     @Override
     public void handleTextMessage(WebSocketSession session, TextMessage message) throws Exception {
@@ -93,11 +103,30 @@ public class LiveHandler extends TextWebSocketHandler {
         session.sendMessage(new TextMessage(response.toString()));
     }
 
-    private synchronized void presenter(final WebSocketSession session, JsonObject jsonMessage)
+    private void presenter(final WebSocketSession session, JsonObject jsonMessage)
             throws IOException {
-        if (presenterUserSession == null) {
-            presenterUserSession = new UserSession(session);
 
+        if (presenterUserSession != null) {
+            sendRejectedPresenterResponse(session);
+        }
+
+        if (!jsonMessage.has("streamNo")) {
+            sendRejectedPresenterResponse(session);
+            return;
+        }
+
+        String streamNo = jsonMessage.get("streamNo").getAsString();
+        session.getAttributes().put("streamNo", streamNo);
+
+        synchronized (this) {
+            if (presenterUserSession != null) {
+                sendRejectedPresenterResponse(session);
+            }
+
+            presenterUserSession = new UserSession(session);
+        }
+
+        try {
             pipeline = kurento.createMediaPipeline();
             presenterUserSession.setWebRtcEndpoint(new WebRtcEndpoint.Builder(pipeline).build());
 
@@ -132,39 +161,36 @@ public class LiveHandler extends TextWebSocketHandler {
                 presenterUserSession.sendMessage(response);
             }
             presenterWebRtc.gatherCandidates();
-
-        } else {
-            JsonObject response = new JsonObject();
-            response.addProperty("id", "presenterResponse");
-            response.addProperty("response", "rejected");
-            response.addProperty("message",
-                    "Another user is currently acting as sender. Try again later ...");
-            session.sendMessage(new TextMessage(response.toString()));
+        } catch (Exception e) {
+            log.error("Presenter 설정 실패", e);
+            stop(session);
         }
     }
 
-    private synchronized void viewer(final WebSocketSession session, JsonObject jsonMessage)
+    private void viewer(final WebSocketSession session, JsonObject jsonMessage)
             throws IOException {
-        if (presenterUserSession == null || presenterUserSession.getWebRtcEndpoint() == null) {
-            JsonObject response = new JsonObject();
-            response.addProperty("id", "viewerResponse");
-            response.addProperty("response", "rejected");
-            response.addProperty("message",
-                    "No active sender now. Become sender or . Try again later ...");
-            session.sendMessage(new TextMessage(response.toString()));
-        } else {
-            if (viewers.containsKey(session.getId())) {
-                JsonObject response = new JsonObject();
-                response.addProperty("id", "viewerResponse");
-                response.addProperty("response", "rejected");
-                response.addProperty("message", "You are already viewing in this session. "
-                        + "Use a different browser to add additional viewers.");
-                session.sendMessage(new TextMessage(response.toString()));
-                return;
-            }
-            UserSession viewer = new UserSession(session);
-            viewers.put(session.getId(), viewer);
 
+        if (!jsonMessage.has("streamNo")) {
+            sendRejectedViewerResponse(session, "StreamNo is missing in message");
+            return;
+        }
+
+        String streamNo = jsonMessage.get("streamNo").getAsString();
+        session.getAttributes().put("streamNo", streamNo);
+
+        UserSession presenter = presenterUserSession;
+        if (presenter == null || presenter.getWebRtcEndpoint() == null) {
+            sendRejectedViewerResponse(session, "No active sender now. Become sender or . Try again later ...");
+        }
+
+        UserSession viewer = new UserSession(session);
+
+        if (viewers.putIfAbsent(session.getId(), viewer) != null) {
+            sendRejectedViewerResponse(session, "You are already viewing in this session.");
+            return;
+        }
+
+        try {
             WebRtcEndpoint nextWebRtc = new WebRtcEndpoint.Builder(pipeline).build();
 
             nextWebRtc.addIceCandidateFoundListener(new EventListener<IceCandidateFoundEvent>() {
@@ -185,7 +211,13 @@ public class LiveHandler extends TextWebSocketHandler {
             });
 
             viewer.setWebRtcEndpoint(nextWebRtc);
-            presenterUserSession.getWebRtcEndpoint().connect(nextWebRtc);
+
+            WebRtcEndpoint presenterWebRtc = presenter.getWebRtcEndpoint();
+            if (presenterWebRtc == null) {
+                throw new RuntimeException("Presenter endpoint disappeared.");
+            }
+            presenterWebRtc.connect(nextWebRtc);
+
             String sdpOffer = jsonMessage.getAsJsonPrimitive("sdpOffer").getAsString();
             String sdpAnswer = nextWebRtc.processOffer(sdpOffer);
 
@@ -198,6 +230,12 @@ public class LiveHandler extends TextWebSocketHandler {
                 viewer.sendMessage(response);
             }
             nextWebRtc.gatherCandidates();
+
+            liveService.incrementCount(streamNo);
+
+        } catch (Exception e) {
+            log.error("Viewer 연결 중 에러 발생", e);
+            stop(session);
         }
     }
 
@@ -226,6 +264,35 @@ public class LiveHandler extends TextWebSocketHandler {
 
     @Override
     public void afterConnectionClosed(WebSocketSession session, CloseStatus status) throws Exception {
+        String streamNo = (String) session.getAttributes().get("streamNo");
+
+        if (streamNo != null && viewers.containsKey(session.getId())) {
+            viewers.remove(session.getId());
+
+            liveService.decrementCount(streamNo);
+
+            log.info("시청자 퇴장: streamNo={}, sessionId={}", streamNo, session.getId());
+        }
+
         stop(session);
     }
+
+    private void sendRejectedPresenterResponse(WebSocketSession session) throws IOException {
+        JsonObject response = new JsonObject();
+        response.addProperty("id", "presenterResponse");
+        response.addProperty("response", "rejected");
+        response.addProperty("message",
+                "Another user is currently acting as sender. Try again later ...");
+        session.sendMessage(new TextMessage(response.toString()));
+    }
+
+    private void sendRejectedViewerResponse(WebSocketSession session, String message) throws IOException {
+        JsonObject response = new JsonObject();
+        response.addProperty("id", "viewerResponse");
+        response.addProperty("response", "rejected");
+        response.addProperty("message", message);
+        session.sendMessage(new TextMessage(response.toString()));
+    }
+
 }
+
