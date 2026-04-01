@@ -275,12 +275,14 @@ public class LiveServiceImpl implements LiveService {
     }
 
     @Override
-    public void saveSnapshot(Long streamNo, int viewerCount) {
-        long timestamp = System.currentTimeMillis() / 1000;
-        String key = "stats:" + streamNo;
-        String data = timestamp + ":" + viewerCount;
+    public void saveSnapshot(Long streamNo, int viewerCount, Long startTime) {
+        long currentTime = System.currentTimeMillis() / 1000;
+        long relativeTime = Math.max(0, currentTime - startTime);
 
-        redisTemplate.opsForZSet().add(key, data, (double) timestamp);
+        String key = "stats:" + streamNo;
+        String data = relativeTime + ":" + viewerCount;
+
+        redisTemplate.opsForZSet().add(key, data, (double) relativeTime);
 
         redisTemplate.expire(key, Duration.ofHours(24));
     }

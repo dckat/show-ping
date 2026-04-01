@@ -25,6 +25,8 @@ public class LiveStatsScheduler {
 
     private final LiveHandler liveHandler;
 
+    private final Map<Long, Long> streamStartTimes = new ConcurrentHashMap<>();
+
     private final Map<Long, ScheduledFuture<?>> scheduledTasks = new ConcurrentHashMap<>();
 
     public void startViewCountScheduler(Long streamNo) {
@@ -33,7 +35,9 @@ public class LiveStatsScheduler {
             return;
         }
 
-        // 5초마다 해당 streamNo에 대해서만 실행
+        streamStartTimes.put(streamNo, System.currentTimeMillis() / 1000);
+
+        // 3초마다 해당 streamNo에 대해서만 실행
         ScheduledFuture<?> task = taskScheduler.scheduleAtFixedRate(() -> {
             broadcastViewCountByStream(streamNo);
         }, 3000);
@@ -55,6 +59,8 @@ public class LiveStatsScheduler {
         UserSession currentPresenter = liveHandler.getPresenterUserSession();
         ConcurrentHashMap<String, UserSession> currentViewers = liveHandler.getViewers();
 
+        Long startTime = streamStartTimes.get(streamNo);
+
         // 해당 streamNo를 보고 있는 유저 필터링 (Long 비교)
         long count = currentViewers.values().stream()
                 .filter(user -> {
@@ -64,7 +70,7 @@ public class LiveStatsScheduler {
                 .count();
 
         // DB 저장 (Long 타입 streamNo 전달)
-        liveService.saveSnapshot(streamNo, (int) count);
+        liveService.saveSnapshot(streamNo, (int) count, startTime);
 
         // 메시지 구성
         JsonObject countMessage = new JsonObject();
