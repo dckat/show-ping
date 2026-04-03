@@ -1,6 +1,10 @@
 package com.ssginc.showpingrefactoring.batch.job.writer;
 
 import com.ssginc.showpingrefactoring.domain.stream.dto.object.ClipSegment;
+import com.ssginc.showpingrefactoring.domain.stream.entity.Clip;
+import com.ssginc.showpingrefactoring.domain.stream.entity.Stream;
+import com.ssginc.showpingrefactoring.domain.stream.repository.ClipRepository;
+import com.ssginc.showpingrefactoring.domain.stream.repository.LiveRepository;
 import com.ssginc.showpingrefactoring.infrastructure.NCP.storage.StorageLoader;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -27,9 +31,16 @@ public class ClipWriter implements ItemWriter<List<ClipSegment>> {
 
     private final StorageLoader storageLoader;
 
+    private final LiveRepository liveRepository;
+
+    private final ClipRepository clipRepository;
+
     @Override
     public void write(Chunk<? extends List<ClipSegment>> items) throws Exception {
         String folderPath = "clips/" + streamNo;
+
+        Stream stream = liveRepository.findById(streamNo)
+                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 스트림입니다."));
 
         for (List<ClipSegment> segments : items) {
             for (int i = 0; i < segments.size(); i++) {
@@ -40,12 +51,21 @@ public class ClipWriter implements ItemWriter<List<ClipSegment>> {
                 File thumbFile = new File(thumb);
 
                 try {
+                    // 클립 추출
                     extractClip(segments.get(i), output, thumb);
 
+                    // 클립 업로드 (NCP)
                     String uploadUrl = storageLoader.uploadShortFormFile(clipFile, thumbFile, folderPath);
-
                     log.info("NCP 업로드 성공: [업로드 Url] {}", uploadUrl);
 
+                    // 클립 메타데이터 DB 저장
+                    Clip clip = Clip.builder()
+                            .stream(stream)
+                            .clipPath(uploadUrl)
+                            .build();
+
+                    clipRepository.save(clip);
+                    log.info("DB 저장 완료: Clip No {}", clip.getClipNo());
                 } finally {
                     if (clipFile.exists()) clipFile.delete();
                     if (thumbFile.exists()) thumbFile.delete();
