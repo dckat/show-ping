@@ -72,4 +72,8 @@ public class Stream {
     @OneToOne(mappedBy = "stream", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
     private ChatRoom chatRoom;
 
+    // 클립
+    // 영상 : 영상클립은 1 : N의 관계를 가진다.
+    @OneToMany(mappedBy = "clip", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
+    private List<Clip> clips;
 }
