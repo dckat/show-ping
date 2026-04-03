@@ -34,6 +34,7 @@ public enum ErrorCode {
     // [라이브.VOD 관련 에러 코드]
     // [공통]
     STREAM_NOT_FOUND(HttpStatus.NOT_FOUND, "ST001", "요청한 영상 정보가 없습니다."),
+    UPLOAD_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "ST002", "업로드 중 문제가 발생하였습니다"),
 
     // [VOD]
     VOD_LIST_EMPTY(HttpStatus.NOT_FOUND, "VO001", "VOD 목록이 비어있습니다."),
