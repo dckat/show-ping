@@ -29,7 +29,7 @@ public class ClipWriter implements ItemWriter<List<ClipSegment>> {
 
     @Override
     public void write(Chunk<? extends List<ClipSegment>> items) throws Exception {
-        String folderPath = "highlights/" + streamNo;
+        String folderPath = "clips/" + streamNo;
 
         for (List<ClipSegment> segments : items) {
             for (int i = 0; i < segments.size(); i++) {
