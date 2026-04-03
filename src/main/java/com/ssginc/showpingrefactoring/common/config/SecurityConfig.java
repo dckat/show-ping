@@ -82,7 +82,7 @@ public class SecurityConfig {
                                 "/api/live/live-info", "/api/live/active", "/stream/watch/**", "/stream/list/**",
                                 "/watch/vod/**", "/api/watch/insert", "/product/product_list","/product/product_list/**",
                                 "/product/product_detail/**","/record", "/live", "/api/csrf", "/api/live/register", "/api/vod/list/**", "/api/vod/subtitle/**"
-                                ,"/api/auth/reissue","/auth/mfa/**"
+                                ,"/api/auth/reissue","/auth/mfa/**", "/api/vod/clip/list"
                         ).permitAll()
                         // ADMIN
                         .requestMatchers(
