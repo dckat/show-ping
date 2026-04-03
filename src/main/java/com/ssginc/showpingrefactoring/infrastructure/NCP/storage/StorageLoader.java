@@ -1,10 +1,11 @@
 package com.ssginc.showpingrefactoring.infrastructure.NCP.storage;
 
 import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.model.GetObjectRequest;
-import com.amazonaws.services.s3.model.PutObjectRequest;
-import com.amazonaws.services.s3.model.S3Object;
+import com.amazonaws.services.s3.model.*;
+import com.ssginc.showpingrefactoring.common.exception.CustomException;
+import com.ssginc.showpingrefactoring.common.exception.ErrorCode;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.InputStreamResource;
 import org.springframework.core.io.Resource;
@@ -19,6 +20,7 @@ import java.io.File;
  */
 @Component
 @RequiredArgsConstructor
+@Slf4j
 public class StorageLoader {
 
     @Value("${ncp.storage.bucket-name}")
@@ -54,6 +56,25 @@ public class StorageLoader {
             return null;
         }
         return "video/hls/" + fileName + ".m3u8";
+    }
+
+    public String uploadShortFormFile(File clipFile, File thumbFile, String path) {
+        String clipKey = path + "/" + clipFile.getName();
+        String thumbKey = path + "/" + thumbFile.getName();
+
+        try {
+            amazonS3Client.putObject(new PutObjectRequest(bucketName, clipKey, clipFile)
+                    .withCannedAcl(CannedAccessControlList.PublicRead));
+
+            amazonS3Client.putObject(new PutObjectRequest(bucketName, thumbKey, thumbFile)
+                    .withCannedAcl(CannedAccessControlList.PublicRead));
+
+            return amazonS3Client.getUrl(bucketName, clipKey).toString();
+        } catch (Exception e) {
+            log.error("[StorageLoader] 파일 업로드 중 알 수 없는 에러 발생", e);
+            throw new CustomException(ErrorCode.UPLOAD_FAILED);
+        }
+
     }
 
     /**
