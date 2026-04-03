@@ -9,6 +9,7 @@ import com.ssginc.showpingrefactoring.domain.member.entity.Member;
 import com.ssginc.showpingrefactoring.domain.member.repository.MemberRepository;
 import com.ssginc.showpingrefactoring.domain.stream.dto.object.VodListCursor;
 import com.ssginc.showpingrefactoring.domain.stream.dto.object.VodRecommendDto;
+import com.ssginc.showpingrefactoring.domain.stream.dto.response.ClipResponse;
 import com.ssginc.showpingrefactoring.domain.stream.dto.response.StreamResponseDto;
 import com.ssginc.showpingrefactoring.domain.stream.repository.VodRowProjection;
 import com.ssginc.showpingrefactoring.infrastructure.NCP.storage.StorageLoader;
@@ -187,6 +188,11 @@ public class VodServiceImpl implements VodService {
                 .collect(Collectors.toList());
 
         return recommendList;
+    }
+
+    @Override
+    public List<ClipResponse> getClipUrls() {
+        return storageLoader.getClips();
     }
 
 }

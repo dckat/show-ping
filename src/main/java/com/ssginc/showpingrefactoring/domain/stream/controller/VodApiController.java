@@ -8,6 +8,7 @@ import com.ssginc.showpingrefactoring.domain.stream.dto.object.VodListCursor;
 import com.ssginc.showpingrefactoring.domain.stream.dto.object.VodRecommendDto;
 import com.ssginc.showpingrefactoring.domain.stream.dto.request.VodListRequestDto;
 import com.ssginc.showpingrefactoring.domain.stream.dto.request.VodListScrollRequestDto;
+import com.ssginc.showpingrefactoring.domain.stream.dto.response.ClipResponse;
 import com.ssginc.showpingrefactoring.domain.stream.dto.response.StreamResponseDto;
 import com.ssginc.showpingrefactoring.domain.stream.service.SubtitleService;
 import com.ssginc.showpingrefactoring.domain.stream.service.VodService;
@@ -79,6 +80,17 @@ public class VodApiController implements VodApiSpecification {
 
         return ResponseEntity.ok(slice);
 
+    }
+
+    /**
+     * Clip 목록을 페이징하여 반환해주는 컨트롤러 메서드
+     * @return 전달할 응답객체 (json 형태로 전달)
+     */
+    @Override
+    @GetMapping("/clip/list")
+    public ResponseEntity<?> listClip() {
+        List<ClipResponse> clipUrls = vodService.getClipUrls();
+        return ResponseEntity.ok(clipUrls);
     }
 
     /**
