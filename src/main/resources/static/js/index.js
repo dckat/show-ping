@@ -87,6 +87,8 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // 로그인한 회원과 비슷한 연령대. 성별의 자주보는 영상 데이터 추천 fetch
     getRecommend();
+
+    getClip();
     getBroadCast();
     getVod();
 
@@ -358,14 +360,49 @@ function setupVodFilterButtons() {
         });
 }
 
+function getClip() {
+    axios.get('/api/vod/clip/list')
+        .then(response => {
+            const clipContents = response.data;
+
+            console.log(clipContents);
+
+            if (clipContents.length > 0) {
+                const clipGrid = document.getElementById('clip-grid');
+                clipGrid.innerHTML = '';
+
+                clipContents.forEach(clip => {
+                    const clipDiv = document.createElement('div');
+                    clipDiv.classList.add('clip-item');
+
+                    // 파일명만 추출
+                    const displayTitle = clip.title;
+                    const thumbName = clip.clipUrl.replace('.mp4', '.jpg');
+
+                    clipDiv.innerHTML = `
+                            <div class="clip-img-container">
+                                <img src="${thumbName}" />
+                            </div>
+                            <p id="title" style="font-size: 15px; font-weight: bold; margin: 8px 0 4px;">${displayTitle}</p>
+                    `;
+
+                    // 클립 클릭 시 상세 페이지로 이동
+                    clipDiv.addEventListener('click', () => {
+                        window.location.href = `/watch/clip/`;
+                    });
+
+                    clipGrid.appendChild(clipDiv);
+                })
+            }
+        })
+}
+
 function getRecommend() {
     axios.get('/api/vod/recommend/list', {
         withCredentials: true   // 쿠키 인증 방식
     }).then(response => {
         const data = response.data;
         const recommendContents = data.contents;
-
-        console.log(recommendContents);
 
         if (recommendContents.length > 0) {
             const recommendSection = document.querySelector('.recommend');
