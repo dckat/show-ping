@@ -9,8 +9,11 @@ import com.ssginc.showpingrefactoring.domain.member.entity.Member;
 import com.ssginc.showpingrefactoring.domain.member.repository.MemberRepository;
 import com.ssginc.showpingrefactoring.domain.stream.dto.object.VodListCursor;
 import com.ssginc.showpingrefactoring.domain.stream.dto.object.VodRecommendDto;
-import com.ssginc.showpingrefactoring.domain.stream.dto.response.ClipResponse;
+import com.ssginc.showpingrefactoring.domain.stream.dto.response.ClipResponseDto;
 import com.ssginc.showpingrefactoring.domain.stream.dto.response.StreamResponseDto;
+import com.ssginc.showpingrefactoring.domain.stream.entity.Clip;
+import com.ssginc.showpingrefactoring.domain.stream.repository.ClipProjection;
+import com.ssginc.showpingrefactoring.domain.stream.repository.ClipRepository;
 import com.ssginc.showpingrefactoring.domain.stream.repository.VodRowProjection;
 import com.ssginc.showpingrefactoring.infrastructure.NCP.storage.StorageLoader;
 import com.ssginc.showpingrefactoring.domain.stream.repository.VodRepository;
@@ -22,6 +25,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.io.File;
 import java.time.Duration;
@@ -34,6 +38,7 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class VodServiceImpl implements VodService {
 
+    private final ClipRepository clipRepository;
     @Value("${download.path}")
     private String VIDEO_PATH;
 
@@ -191,8 +196,17 @@ public class VodServiceImpl implements VodService {
     }
 
     @Override
-    public List<ClipResponse> getClipUrls() {
-        return storageLoader.getClips();
+    @Transactional(readOnly = true)
+    public List<ClipResponseDto> getClips() {
+        List<ClipProjection> clipProjection = clipRepository.findLatest4WithStreamNative();
+
+        return clipProjection.stream()
+                .map(p -> new ClipResponseDto(
+                        p.getClipNo(),
+                        p.getStreamTitle(),
+                        p.getClipPath()
+                ))
+                .toList();
     }
 
 }

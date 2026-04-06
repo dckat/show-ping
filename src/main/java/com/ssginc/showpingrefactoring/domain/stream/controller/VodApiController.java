@@ -8,8 +8,9 @@ import com.ssginc.showpingrefactoring.domain.stream.dto.object.VodListCursor;
 import com.ssginc.showpingrefactoring.domain.stream.dto.object.VodRecommendDto;
 import com.ssginc.showpingrefactoring.domain.stream.dto.request.VodListRequestDto;
 import com.ssginc.showpingrefactoring.domain.stream.dto.request.VodListScrollRequestDto;
-import com.ssginc.showpingrefactoring.domain.stream.dto.response.ClipResponse;
+import com.ssginc.showpingrefactoring.domain.stream.dto.response.ClipResponseDto;
 import com.ssginc.showpingrefactoring.domain.stream.dto.response.StreamResponseDto;
+import com.ssginc.showpingrefactoring.domain.stream.entity.Clip;
 import com.ssginc.showpingrefactoring.domain.stream.service.SubtitleService;
 import com.ssginc.showpingrefactoring.domain.stream.service.VodService;
 import com.ssginc.showpingrefactoring.domain.stream.swagger.VodApiSpecification;
@@ -89,8 +90,8 @@ public class VodApiController implements VodApiSpecification {
     @Override
     @GetMapping("/clip/list")
     public ResponseEntity<?> listClip() {
-        List<ClipResponse> clipUrls = vodService.getClipUrls();
-        return ResponseEntity.ok(clipUrls);
+        List<ClipResponseDto> clips = vodService.getClips();
+        return ResponseEntity.ok(clips);
     }
 
     /**

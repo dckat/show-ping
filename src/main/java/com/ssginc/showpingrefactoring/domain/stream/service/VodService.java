@@ -3,8 +3,9 @@ package com.ssginc.showpingrefactoring.domain.stream.service;
 import com.ssginc.showpingrefactoring.common.dto.SliceResponseDto;
 import com.ssginc.showpingrefactoring.domain.stream.dto.object.VodListCursor;
 import com.ssginc.showpingrefactoring.domain.stream.dto.object.VodRecommendDto;
-import com.ssginc.showpingrefactoring.domain.stream.dto.response.ClipResponse;
+import com.ssginc.showpingrefactoring.domain.stream.dto.response.ClipResponseDto;
 import com.ssginc.showpingrefactoring.domain.stream.dto.response.StreamResponseDto;
+import com.ssginc.showpingrefactoring.domain.stream.entity.Clip;
 import jakarta.validation.constraints.Min;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -26,5 +27,5 @@ public interface VodService {
 
     List<VodRecommendDto> getRecommendInfo(Long memberNo, String memberId);
 
-    List<ClipResponse> getClipUrls();
+    List<ClipResponseDto> getClips();
 }
