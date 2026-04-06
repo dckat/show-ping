@@ -365,8 +365,6 @@ function getClip() {
         .then(response => {
             const clipContents = response.data;
 
-            console.log(clipContents);
-
             if (clipContents.length > 0) {
                 const clipGrid = document.getElementById('clip-grid');
                 clipGrid.innerHTML = '';
@@ -376,8 +374,8 @@ function getClip() {
                     clipDiv.classList.add('clip-item');
 
                     // 파일명만 추출
-                    const displayTitle = clip.title;
-                    const thumbName = clip.clipUrl.replace('.mp4', '.jpg');
+                    const displayTitle = clip.streamTitle;
+                    const thumbName = clip.clipPath.replace('.mp4', '.jpg');
 
                     clipDiv.innerHTML = `
                             <div class="clip-img-container">
