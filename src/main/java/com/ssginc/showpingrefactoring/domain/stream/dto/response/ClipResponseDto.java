@@ -9,9 +9,10 @@ import lombok.Setter;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-public class ClipResponse {
+public class ClipResponseDto {
 
-    private String title;
-    private String clipUrl;
+    private Long clipNo;
+    private String streamTitle;
+    private String clipPath;
 
 }
