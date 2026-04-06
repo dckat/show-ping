@@ -1,6 +1,5 @@
 package com.ssginc.showpingrefactoring.domain.stream.entity;
 
-import com.ssginc.showpingrefactoring.domain.member.entity.Member;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import lombok.*;
