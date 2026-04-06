@@ -4,7 +4,7 @@ import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.model.*;
 import com.ssginc.showpingrefactoring.common.exception.CustomException;
 import com.ssginc.showpingrefactoring.common.exception.ErrorCode;
-import com.ssginc.showpingrefactoring.domain.stream.dto.response.ClipResponse;
+import com.ssginc.showpingrefactoring.domain.stream.dto.response.ClipResponseDto;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -111,28 +111,4 @@ public class StorageLoader {
         amazonS3Client.putObject(new PutObjectRequest(bucketName, remoteKey, file));
     }
 
-    /**
-     * 영상 클립 최신 4개를 가져오는 메서드
-     */
-    public List<ClipResponse> getClips() {
-        ListObjectsV2Request request = new ListObjectsV2Request()
-                .withBucketName(bucketName)
-                .withPrefix("clips/");
-
-        ListObjectsV2Result result = amazonS3Client.listObjectsV2(request);
-
-        return result.getObjectSummaries().stream()
-                .filter(obj -> obj.getKey().endsWith(".mp4"))
-                .sorted((o1, o2) -> o2.getLastModified().compareTo(o1.getLastModified()))
-                .limit(4)
-                .map(obj -> {
-                    // 각 객체의 메타데이터 조회
-                    ObjectMetadata meta = amazonS3Client.getObjectMetadata(bucketName, obj.getKey());
-                    String title = meta.getUserMetadata().get("title");
-                    String url = amazonS3Client.getUrl(bucketName, obj.getKey()).toString();
-
-                    return new ClipResponse(title, url);
-                })
-                .collect(Collectors.toList());
-    }
 }
