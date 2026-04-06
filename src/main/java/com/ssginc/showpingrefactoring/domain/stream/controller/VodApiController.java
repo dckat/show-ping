@@ -10,7 +10,6 @@ import com.ssginc.showpingrefactoring.domain.stream.dto.request.VodListRequestDt
 import com.ssginc.showpingrefactoring.domain.stream.dto.request.VodListScrollRequestDto;
 import com.ssginc.showpingrefactoring.domain.stream.dto.response.ClipResponseDto;
 import com.ssginc.showpingrefactoring.domain.stream.dto.response.StreamResponseDto;
-import com.ssginc.showpingrefactoring.domain.stream.entity.Clip;
 import com.ssginc.showpingrefactoring.domain.stream.service.SubtitleService;
 import com.ssginc.showpingrefactoring.domain.stream.service.VodService;
 import com.ssginc.showpingrefactoring.domain.stream.swagger.VodApiSpecification;

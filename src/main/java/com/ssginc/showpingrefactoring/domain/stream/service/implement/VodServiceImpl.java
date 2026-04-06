@@ -11,7 +11,6 @@ import com.ssginc.showpingrefactoring.domain.stream.dto.object.VodListCursor;
 import com.ssginc.showpingrefactoring.domain.stream.dto.object.VodRecommendDto;
 import com.ssginc.showpingrefactoring.domain.stream.dto.response.ClipResponseDto;
 import com.ssginc.showpingrefactoring.domain.stream.dto.response.StreamResponseDto;
-import com.ssginc.showpingrefactoring.domain.stream.entity.Clip;
 import com.ssginc.showpingrefactoring.domain.stream.repository.ClipProjection;
 import com.ssginc.showpingrefactoring.domain.stream.repository.ClipRepository;
 import com.ssginc.showpingrefactoring.domain.stream.repository.VodRowProjection;
