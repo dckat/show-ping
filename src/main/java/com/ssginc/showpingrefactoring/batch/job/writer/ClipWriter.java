@@ -1,5 +1,7 @@
 package com.ssginc.showpingrefactoring.batch.job.writer;
 
+import com.ssginc.showpingrefactoring.common.exception.CustomException;
+import com.ssginc.showpingrefactoring.common.exception.ErrorCode;
 import com.ssginc.showpingrefactoring.domain.stream.dto.object.ClipSegment;
 import com.ssginc.showpingrefactoring.domain.stream.entity.Clip;
 import com.ssginc.showpingrefactoring.domain.stream.entity.Stream;
@@ -40,7 +42,7 @@ public class ClipWriter implements ItemWriter<List<ClipSegment>> {
         String folderPath = "clips/" + streamNo;
 
         Stream stream = liveRepository.findById(streamNo)
-                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 스트림입니다."));
+                .orElseThrow(() -> new CustomException(ErrorCode.STREAM_NOT_FOUND));
 
         for (List<ClipSegment> segments : items) {
             for (int i = 0; i < segments.size(); i++) {
